@@ -80,10 +80,6 @@
             return true;
         }
 
-        internal static bool Little64(byte[] data, out ulong retval, int offset = 0) {
-            return Little64(ref data, out retval, offset);
-        }
-
         #endregion Little Endian
 
         #region Big Endian
@@ -99,10 +95,6 @@
             retval = BitConverter.ToUInt16(data, offset);
             retval = Big16(retval);
             return true;
-        }
-
-        internal static bool Big16(byte[] data, out ushort retval, int offset = 0) {
-            return Big16(ref data, out retval, offset);
         }
 
         internal static uint Big32(uint ret) {

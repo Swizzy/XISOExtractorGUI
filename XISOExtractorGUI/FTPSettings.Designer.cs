@@ -1,6 +1,6 @@
 ﻿namespace XISOExtractorGUI
 {
-    partial class FTPSettings
+    internal sealed partial class FTPSettings
     {
         /// <summary>
         /// Required designer variable.

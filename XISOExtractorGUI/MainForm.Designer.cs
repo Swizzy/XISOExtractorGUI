@@ -1,6 +1,6 @@
 ﻿namespace XISOExtractorGUI
 {
-    sealed partial class MainForm
+    internal sealed partial class MainForm
     {
         /// <summary>
         /// Required designer variable.

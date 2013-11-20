@@ -6,20 +6,6 @@
     using System.Text;
     using System.IO;
 
-    public class EventArg<T> : EventArgs
-    {
-        private readonly T _data;
-
-        public EventArg(T data) {
-            _data = data;
-        }
-
-        public T Data {
-            get { return _data; }
-        }
-
-    }
-
     static class XISOExtractor
     {
         static readonly Encoding Enc = Encoding.GetEncoding(1252);
@@ -97,7 +83,7 @@
                 if (entry.IsFile)
                 {
                     if (opts.GenerateFileList)
-                        msg += string.Format("{0}{1} [Offset: 0x{2:X} Size: {3}]{4}", entry.Path, entry.Name, entry.Offset, GetSizeReadable(entry.Size), Environment.NewLine);
+                        msg += string.Format("{0}{1} [Offset: 0x{2:X} Size: {3}]{4}", entry.Path, entry.Name, entry.Offset, Utils.GetSizeReadable(entry.Size), Environment.NewLine);
                     _totalSize += entry.Size;
                     retval.Files++;
                 }
@@ -110,15 +96,15 @@
                 newlist.Add(entry);
             }
             retval.List = newlist;
-            UpdateStatus(string.Format("Parsing Game Partition FS Table done! Total entries found: {0} Files: {1} Folders: {2} Total File size: {3}", retval.List.Count, retval.Files, retval.Folders, GetSizeReadable(_totalSize)));
+            UpdateStatus(string.Format("Parsing Game Partition FS Table done! Total entries found: {0} Files: {1} Folders: {2} Total File size: {3}", retval.List.Count, retval.Files, retval.Folders, Utils.GetSizeReadable(_totalSize)));
             if (opts.GenerateFileList)
             {
-                msg = string.Format("Total entries: {0}{4}Folders: {1}{4}Files: {2}{4}Total Filesize: {5}{4}{3}", retval.List.Count, retval.Folders, retval.Files, msg, Environment.NewLine, GetSizeReadable(_totalSize));
+                msg = string.Format("Total entries: {0}{4}Folders: {1}{4}Files: {2}{4}Total Filesize: {5}{4}{3}", retval.List.Count, retval.Folders, retval.Files, msg, Environment.NewLine, Utils.GetSizeReadable(_totalSize));
                 File.WriteAllText(string.Format("{0}\\{1}.txt", Path.GetDirectoryName(opts.Source), Path.GetFileNameWithoutExtension(opts.Source)), msg);
             }
             if (string.IsNullOrEmpty(opts.Target))
                 opts.Target = string.Format("{0}\\{1}", Path.GetDirectoryName(opts.Source), Path.GetFileNameWithoutExtension(opts.Source));
-            if (opts.Target.EndsWith("\\"))
+            if (opts.Target.EndsWith("\\", StringComparison.Ordinal))
                 opts.Target = opts.Target.Substring(0, opts.Target.Length - 1);
             retval.Size = _totalSize;
             return true;
@@ -137,7 +123,7 @@
             if (ExtractXISO(opts, retval, ref br))
             {
                 sw.Stop();
-                UpdateStatus(string.Format("Successfully extracted {0} Files in {1} Folders with a total size of {2}", retval.Files, retval.Folders, GetSizeReadable(_totalSize)));
+                UpdateStatus(string.Format("Successfully extracted {0} Files in {1} Folders with a total size of {2}", retval.Files, retval.Folders, Utils.GetSizeReadable(_totalSize)));
                 UpdateOperation(string.Format("Completed extraction after {0:F0} Minute(s) and {1} Seconds", sw.Elapsed.TotalMinutes, sw.Elapsed.Seconds));
                 return true;
             }
@@ -169,26 +155,12 @@
                 return ExtractFiles(ref br, ref retval.List, opts.Target, opts.ExcludeSysUpdate);
             }
             Errorlevel = 5;
-            UpdateStatus(string.Format("Extraction failed! (Not enough space on drive) space needed: {0}", GetSizeReadable(retval.Size)));
+            UpdateStatus(string.Format("Extraction failed! (Not enough space on drive) space needed: {0}", Utils.GetSizeReadable(retval.Size)));
             return false;
         }
 
         private static uint GetSmallest(uint val1, uint val2) {
             return val1 < val2 ? val1 : val2;
-        }
-
-        private static string GetSizeReadable(long i) {
-            if (i >= 0x1000000000000000) // Exabyte
-                return string.Format("{0:0.###} EB", (double)(i >> 50) / 1024);
-            if (i >= 0x4000000000000) // Petabyte
-                return string.Format("{0:0.###} PB", (double)(i >> 40) / 1024);
-            if (i >= 0x10000000000) // Terabyte
-                return string.Format("{0:0.###} TB", (double)(i >> 30) / 1024);
-            if (i >= 0x40000000) // Gigabyte
-                return string.Format("{0:0.###} GB", (double)(i >> 20) / 1024);
-            if (i >= 0x100000) // Megabyte
-                return string.Format("{0:0.###} MB", (double)(i >> 10) / 1024);
-            return i >= 0x400 ? string.Format("{0:0.###} KB", (double)i / 1024) : string.Format("{0:0.###} B", (double)i);
         }
 
         private static long GetTotalFreeSpace(string path) {
@@ -389,7 +361,7 @@
                     Directory.CreateDirectory(target + entry.Path + entry.Name);
                     continue;
                 }
-                UpdateStatus(string.Format("Extracting {0}{1} ({2})", entry.Path, entry.Name, GetSizeReadable(entry.Size)));
+                UpdateStatus(string.Format("Extracting {0}{1} ({2})", entry.Path, entry.Name, Utils.GetSizeReadable(entry.Size)));
                 if (!ExtractFile(ref br, entry.Offset, entry.Size, string.Format("{0}{1}{2}", target, entry.Path, entry.Name)))
                     return false;
             }
@@ -421,7 +393,7 @@
         }
     }
 
-    class XISOListAndSize
+    sealed class XISOListAndSize
     {
         public long Size;
         public long Files;
@@ -429,7 +401,7 @@
         public List<XISOTableData> List = new List<XISOTableData>();
     }
 
-    class XISOTableData
+    struct XISOTableData
     {
         public bool IsFile;
         public long Offset;
@@ -438,7 +410,7 @@
         public string Path;
     }
 
-    class XISOOptions
+    sealed class XISOOptions
     {
         public string Source;
         public string Target;

@@ -4,7 +4,7 @@
 	using System.Reflection;
 	using System.Windows.Forms;
 
-	public class FolderSelectDialog
+    internal sealed class FolderSelectDialog
 	{
 		readonly OpenFileDialog _ofd;
 		const string DefaultFilter = "Folders|\n";
@@ -97,9 +97,9 @@
 		#endregion
 	}
 
-	public class WindowWrapper : IWin32Window
+    internal sealed class WindowWrapper : IWin32Window
 	{
-		public WindowWrapper(IntPtr handle) {
+	    internal WindowWrapper(IntPtr handle) {
 			_hwnd = handle;
 		}
 		public IntPtr Handle {
@@ -109,7 +109,7 @@
 		private readonly IntPtr _hwnd;
 	}
 
-	public class Reflector
+    internal sealed class Reflector
 	{
 		#region variables
 
@@ -130,7 +130,7 @@
 			_mAsmb = null;
 			foreach (var aN in Assembly.GetExecutingAssembly().GetReferencedAssemblies())
 			{
-				if (!aN.FullName.StartsWith(an))
+				if (!aN.FullName.StartsWith(an, StringComparison.Ordinal))
 					continue;
 				_mAsmb = Assembly.Load(aN);
 				break;
@@ -187,16 +187,7 @@
 			return methInfo.Invoke(obj, parameters);
 		}
 
-		public object Get(object obj, string prop) {
-			return GetAs(obj.GetType(), obj, prop);
-		}
-
-		private static object GetAs(IReflect type, object obj, string prop) {
-			var propInfo = type.GetProperty(prop, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
-			return propInfo.GetValue(obj, null);
-		}
-
-		public object GetEnum(string typeName, string name) {
+        public object GetEnum(string typeName, string name) {
 			var type = GetType(typeName);
 			var fieldInfo = type.GetField(name);
 			return fieldInfo.GetValue(null);

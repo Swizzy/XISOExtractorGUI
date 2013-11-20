@@ -12,12 +12,12 @@ namespace XISOExtractorGUI
     using System.Reflection;
     using Properties;
 
-    public sealed partial class MainForm : Form
+    internal sealed partial class MainForm : Form
     {
         int _id;
         readonly Dictionary<int, BwArgs> _queDict = new Dictionary<int, BwArgs>();
 
-        public MainForm() {
+        internal MainForm() {
             InitializeComponent();
             var ver = Assembly.GetExecutingAssembly().GetName().Version;
             Text = string.Format(Text, ver.Major, ver.Minor, ver.Build);
@@ -347,13 +347,13 @@ namespace XISOExtractorGUI
         }
     }
 
-    public class BwArgs {
-        public bool Result;
-        public string ErrorMsg;
-        public string Source;
-        public string Target;
-        public bool SkipSystemUpdate;
-        public bool GenerateFileList;
-        public bool GenerateSFV;
+    public sealed class BwArgs {
+        internal bool Result;
+        internal string ErrorMsg;
+        internal string Source;
+        internal string Target;
+        internal bool SkipSystemUpdate;
+        internal bool GenerateFileList;
+        internal bool GenerateSFV;
     }
 }

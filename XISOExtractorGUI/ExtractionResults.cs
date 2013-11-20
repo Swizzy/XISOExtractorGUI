@@ -3,14 +3,14 @@ using System.Windows.Forms;
 
 namespace XISOExtractorGUI
 {
-    public partial class ExtractionResults : Form
+    internal sealed partial class ExtractionResults : Form
     {
-        public ExtractionResults()
+        internal ExtractionResults()
         {
             InitializeComponent();
         }
 
-        public void Show(IEnumerable<BwArgs> results)
+        internal void Show(IEnumerable<BwArgs> results)
         {
             foreach (var res in results)
             {

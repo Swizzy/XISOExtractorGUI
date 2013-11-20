@@ -22,14 +22,13 @@
             if (string.IsNullOrEmpty(args.Name))
                 throw new Exception("DLL Read Failure (Nothing to load!)");
             var name = string.Format("{0}.dll", args.Name.Split(',')[0]);
-            using (var stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(string.Format("{0}.{1}", typeof(Program).Namespace, name)))
+            using (var stream = Assembly.GetAssembly(typeof(Program)).GetManifestResourceStream(string.Format("{0}.{1}", typeof(Program).Namespace, name)))
             {
-                if (stream != null) {
-                    var data = new byte[stream.Length];
-                    stream.Read(data, 0, data.Length);
-                    return Assembly.Load(data);
-                }
-                throw new Exception(string.Format("Can't find external nor internal {0}!", name));
+                if(stream == null)
+                    throw new Exception(string.Format("Can't find external nor internal {0}!", name));
+                var data = new byte[stream.Length];
+                stream.Read(data, 0, data.Length);
+                return Assembly.Load(data);
             }
         }
 

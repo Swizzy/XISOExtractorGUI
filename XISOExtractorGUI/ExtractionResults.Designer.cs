@@ -1,6 +1,6 @@
 ﻿namespace XISOExtractorGUI
 {
-    partial class ExtractionResults
+    internal sealed partial class ExtractionResults
     {
         /// <summary>
         /// Required designer variable.

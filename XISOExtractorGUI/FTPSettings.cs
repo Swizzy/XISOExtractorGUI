@@ -8,18 +8,18 @@ namespace XISOExtractorGUI
     using System.Net;
     using XISOExtractorGUI.Properties;
 
-    public partial class FTPSettings : Form {
-        public static XISOFTP.FTPSettingsData Settings = new XISOFTP.FTPSettingsData();
+    internal sealed partial class FTPSettings : Form {
+        private static readonly XISOFTP.FTPSettingsData Settings = new XISOFTP.FTPSettingsData();
         private static readonly ImageList Imglist = new ImageList();
         delegate void SetNodeCallback(TreeNode node);
         delegate void SetNodeCallback2(TreeNode node, TreeNode src);
 
-        private class NodeListItem {
+        private sealed class NodeListItem {
             public TreeNode Node;
             public string Src;
         }
 
-        private class FTPConnectionSettings
+        private sealed class FTPConnectionSettings
         {
             public string Host;
             public string User = "xbox";
@@ -191,14 +191,11 @@ namespace XISOExtractorGUI
 
         private void TreeView1MouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
         {
-            // ReSharper disable LocalizableElement
             var node = treeView1.SelectedNode;
-            if (node.GetNodeCount(false) == 0 && node.ImageKey == "folder")
-            {
-                pathbox.Text = "/" + node.FullPath.Replace('\\', '/') + "/";
-                AddList("/" + node.FullPath, node);
-            }
-            // ReSharper restore LocalizableElement
+            if (node.GetNodeCount(false) != 0 || !node.ImageKey.Equals("folder"))
+                return;
+            pathbox.Text = string.Format("/{0}/", node.FullPath.Replace('\\', '/'));
+            AddList("/" + node.FullPath, node);
         }
 
         private void TreeView1KeyPress(object sender, KeyPressEventArgs e)
