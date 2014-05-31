@@ -39,8 +39,10 @@
                 opt += "nosystemupdate=true ";
             if (args.GenerateFileList)
                 opt += "genfilelist=true ";
-            if (args.GenerateSFV)
+            if (args.GenerateSfv)
                 opt += "gensfv=true ";
+            if(args.DeleteIsoOnCompletion)
+                opt += "deleteisooncompletion=true ";
             return opt;
         }
     }

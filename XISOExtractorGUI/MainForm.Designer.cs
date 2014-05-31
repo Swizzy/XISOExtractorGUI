@@ -41,7 +41,9 @@
             this.label2 = new System.Windows.Forms.Label();
             this.targetbox = new System.Windows.Forms.TextBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.ftpbox = new System.Windows.Forms.CheckBox();
             this.genfilelistbox = new System.Windows.Forms.CheckBox();
+            this.delIsobox = new System.Windows.Forms.CheckBox();
             this.gensfvbox = new System.Windows.Forms.CheckBox();
             this.skipsysbox = new System.Windows.Forms.CheckBox();
             this.addbtn = new System.Windows.Forms.Button();
@@ -63,7 +65,6 @@
             this.removeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.abortbtn = new System.Windows.Forms.Button();
-            this.ftpbox = new System.Windows.Forms.CheckBox();
             this.groupBox1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.statusStrip2.SuspendLayout();
@@ -72,7 +73,7 @@
             // 
             // selsrcbtn
             // 
-            this.selsrcbtn.Location = new System.Drawing.Point(241, 12);
+            this.selsrcbtn.Location = new System.Drawing.Point(391, 12);
             this.selsrcbtn.Name = "selsrcbtn";
             this.selsrcbtn.Size = new System.Drawing.Size(31, 23);
             this.selsrcbtn.TabIndex = 0;
@@ -93,7 +94,7 @@
             // 
             this.srcbox.Location = new System.Drawing.Point(62, 14);
             this.srcbox.Name = "srcbox";
-            this.srcbox.Size = new System.Drawing.Size(173, 20);
+            this.srcbox.Size = new System.Drawing.Size(323, 20);
             this.srcbox.TabIndex = 0;
             this.srcbox.TextChanged += new System.EventHandler(this.SrcboxTextChanged);
             // 
@@ -107,7 +108,7 @@
             this.queview.FullRowSelect = true;
             this.queview.GridLines = true;
             this.queview.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
-            this.queview.Location = new System.Drawing.Point(278, 12);
+            this.queview.Location = new System.Drawing.Point(428, 12);
             this.queview.Name = "queview";
             this.queview.ShowGroups = false;
             this.queview.Size = new System.Drawing.Size(393, 151);
@@ -138,7 +139,7 @@
             // 
             // seltargetbtn
             // 
-            this.seltargetbtn.Location = new System.Drawing.Point(241, 41);
+            this.seltargetbtn.Location = new System.Drawing.Point(391, 41);
             this.seltargetbtn.Name = "seltargetbtn";
             this.seltargetbtn.Size = new System.Drawing.Size(31, 23);
             this.seltargetbtn.TabIndex = 0;
@@ -159,21 +160,32 @@
             // 
             this.targetbox.Location = new System.Drawing.Point(62, 43);
             this.targetbox.Name = "targetbox";
-            this.targetbox.Size = new System.Drawing.Size(173, 20);
+            this.targetbox.Size = new System.Drawing.Size(323, 20);
             this.targetbox.TabIndex = 2;
             // 
             // groupBox1
             // 
             this.groupBox1.Controls.Add(this.ftpbox);
             this.groupBox1.Controls.Add(this.genfilelistbox);
+            this.groupBox1.Controls.Add(this.delIsobox);
             this.groupBox1.Controls.Add(this.gensfvbox);
             this.groupBox1.Controls.Add(this.skipsysbox);
             this.groupBox1.Location = new System.Drawing.Point(12, 69);
             this.groupBox1.Name = "groupBox1";
-            this.groupBox1.Size = new System.Drawing.Size(260, 65);
+            this.groupBox1.Size = new System.Drawing.Size(410, 65);
             this.groupBox1.TabIndex = 4;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Options";
+            // 
+            // ftpbox
+            // 
+            this.ftpbox.AutoSize = true;
+            this.ftpbox.Location = new System.Drawing.Point(137, 19);
+            this.ftpbox.Name = "ftpbox";
+            this.ftpbox.Size = new System.Drawing.Size(68, 17);
+            this.ftpbox.TabIndex = 11;
+            this.ftpbox.Text = "Use FTP";
+            this.ftpbox.UseVisualStyleBackColor = true;
             // 
             // genfilelistbox
             // 
@@ -184,6 +196,16 @@
             this.genfilelistbox.TabIndex = 0;
             this.genfilelistbox.Text = "Generate FileList";
             this.genfilelistbox.UseVisualStyleBackColor = true;
+            // 
+            // delIsobox
+            // 
+            this.delIsobox.AutoSize = true;
+            this.delIsobox.Location = new System.Drawing.Point(248, 42);
+            this.delIsobox.Name = "delIsobox";
+            this.delIsobox.Size = new System.Drawing.Size(156, 17);
+            this.delIsobox.TabIndex = 0;
+            this.delIsobox.Text = "Delete ISO after completion";
+            this.delIsobox.UseVisualStyleBackColor = true;
             // 
             // gensfvbox
             // 
@@ -213,7 +235,7 @@
             this.addbtn.Enabled = false;
             this.addbtn.Location = new System.Drawing.Point(12, 140);
             this.addbtn.Name = "addbtn";
-            this.addbtn.Size = new System.Drawing.Size(260, 23);
+            this.addbtn.Size = new System.Drawing.Size(410, 23);
             this.addbtn.TabIndex = 5;
             this.addbtn.Text = "Add To Queue";
             this.addbtn.UseVisualStyleBackColor = true;
@@ -224,7 +246,7 @@
             this.processbtn.Enabled = false;
             this.processbtn.Location = new System.Drawing.Point(12, 169);
             this.processbtn.Name = "processbtn";
-            this.processbtn.Size = new System.Drawing.Size(260, 23);
+            this.processbtn.Size = new System.Drawing.Size(410, 23);
             this.processbtn.TabIndex = 5;
             this.processbtn.Text = "Process Queue";
             this.processbtn.UseVisualStyleBackColor = true;
@@ -235,7 +257,7 @@
             this.extractbtn.Enabled = false;
             this.extractbtn.Location = new System.Drawing.Point(12, 198);
             this.extractbtn.Name = "extractbtn";
-            this.extractbtn.Size = new System.Drawing.Size(260, 23);
+            this.extractbtn.Size = new System.Drawing.Size(410, 23);
             this.extractbtn.TabIndex = 5;
             this.extractbtn.Text = "Just Extract";
             this.extractbtn.UseVisualStyleBackColor = true;
@@ -250,7 +272,7 @@
             this.operation});
             this.statusStrip1.Location = new System.Drawing.Point(0, 252);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(683, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(833, 22);
             this.statusStrip1.SizingGrip = false;
             this.statusStrip1.TabIndex = 6;
             this.statusStrip1.Text = "statusStrip1";
@@ -275,7 +297,7 @@
             // label3
             // 
             this.label3.AutoSize = true;
-            this.label3.Location = new System.Drawing.Point(292, 174);
+            this.label3.Location = new System.Drawing.Point(442, 174);
             this.label3.Name = "label3";
             this.label3.Size = new System.Drawing.Size(72, 13);
             this.label3.TabIndex = 7;
@@ -283,7 +305,7 @@
             // 
             // isoprogressbar
             // 
-            this.isoprogressbar.Location = new System.Drawing.Point(370, 169);
+            this.isoprogressbar.Location = new System.Drawing.Point(520, 169);
             this.isoprogressbar.Name = "isoprogressbar";
             this.isoprogressbar.Size = new System.Drawing.Size(301, 23);
             this.isoprogressbar.TabIndex = 8;
@@ -291,7 +313,7 @@
             // label4
             // 
             this.label4.AutoSize = true;
-            this.label4.Location = new System.Drawing.Point(278, 203);
+            this.label4.Location = new System.Drawing.Point(428, 203);
             this.label4.Name = "label4";
             this.label4.Size = new System.Drawing.Size(86, 13);
             this.label4.TabIndex = 7;
@@ -299,7 +321,7 @@
             // 
             // queueprogressbar
             // 
-            this.queueprogressbar.Location = new System.Drawing.Point(370, 198);
+            this.queueprogressbar.Location = new System.Drawing.Point(520, 198);
             this.queueprogressbar.Name = "queueprogressbar";
             this.queueprogressbar.Size = new System.Drawing.Size(301, 23);
             this.queueprogressbar.TabIndex = 8;
@@ -318,7 +340,7 @@
             this.status});
             this.statusStrip2.Location = new System.Drawing.Point(0, 230);
             this.statusStrip2.Name = "statusStrip2";
-            this.statusStrip2.Size = new System.Drawing.Size(683, 22);
+            this.statusStrip2.Size = new System.Drawing.Size(833, 22);
             this.statusStrip2.SizingGrip = false;
             this.statusStrip2.TabIndex = 9;
             this.statusStrip2.Text = "statusStrip2";
@@ -365,23 +387,13 @@
             this.abortbtn.Visible = false;
             this.abortbtn.Click += new System.EventHandler(this.AbortOperation);
             // 
-            // ftpbox
-            // 
-            this.ftpbox.AutoSize = true;
-            this.ftpbox.Location = new System.Drawing.Point(137, 19);
-            this.ftpbox.Name = "ftpbox";
-            this.ftpbox.Size = new System.Drawing.Size(68, 17);
-            this.ftpbox.TabIndex = 11;
-            this.ftpbox.Text = "Use FTP";
-            this.ftpbox.UseVisualStyleBackColor = true;
-            // 
             // MainForm
             // 
             this.AllowDrop = true;
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
-            this.ClientSize = new System.Drawing.Size(683, 274);
+            this.ClientSize = new System.Drawing.Size(833, 274);
             this.Controls.Add(this.statusStrip2);
             this.Controls.Add(this.queueprogressbar);
             this.Controls.Add(this.label4);
@@ -402,8 +414,8 @@
             this.Controls.Add(this.abortbtn);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MaximizeBox = false;
-            this.MaximumSize = new System.Drawing.Size(699, 312);
-            this.MinimumSize = new System.Drawing.Size(699, 312);
+            this.MaximumSize = new System.Drawing.Size(849, 312);
+            this.MinimumSize = new System.Drawing.Size(849, 312);
             this.Name = "MainForm";
             this.Text = "XISO Extractor GUI v{0}.{1} (Build: {2}) By Swizzy";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainFormFormClosing);
@@ -458,5 +470,6 @@
         private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
         private System.Windows.Forms.Button abortbtn;
         private System.Windows.Forms.CheckBox ftpbox;
+        private System.Windows.Forms.CheckBox delIsobox;
     }
 }

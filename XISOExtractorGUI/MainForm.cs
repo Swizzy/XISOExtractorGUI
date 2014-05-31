@@ -1,126 +1,122 @@
-﻿using System.Diagnostics;
-
-namespace XISOExtractorGUI
-{
+﻿namespace XISOExtractorGUI {
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
-    using System.Threading;
-    using System.Windows.Forms;
     using System.ComponentModel;
+    using System.Diagnostics;
+    using System.Globalization;
     using System.IO;
     using System.Reflection;
-    using Properties;
+    using System.Threading;
+    using System.Windows.Forms;
+    using XISOExtractorGUI.Properties;
 
-    internal sealed partial class MainForm : Form
-    {
-        int _id;
-        readonly Dictionary<int, BwArgs> _queDict = new Dictionary<int, BwArgs>();
+    internal sealed partial class MainForm: Form {
+        private readonly Dictionary<int, BwArgs> _queDict = new Dictionary<int, BwArgs>();
+        private int _id;
 
         internal MainForm() {
             InitializeComponent();
             var ver = Assembly.GetExecutingAssembly().GetName().Version;
             Text = string.Format(Text, ver.Major, ver.Minor, ver.Build);
-            XISOExtractor.FileProgress += XISOExtractorFileProgress;
-            XISOExtractor.ISOProgress += XISOExtractorTotalProgress;
-            XISOExtractor.Operation += XISOExtractorOnOperation;
-            XISOExtractor.Status += XISOExtractorOnStatus;
-            XISOExtractor.TotalProgress += XISOExtractorQueueProgress;
+            XisoExtractor.FileProgress += XisoExtractorFileProgress;
+            XisoExtractor.IsoProgress += XisoExtractorTotalProgress;
+            XisoExtractor.Operation += XisoExtractorOnOperation;
+            XisoExtractor.Status += XisoExtractorOnStatus;
+            XisoExtractor.TotalProgress += XisoExtractorQueueProgress;
             ResetButtons();
         }
 
-        private void XISOExtractorOnStatus(object sender, EventArg<string> e) {
-            if (InvokeRequired)
-            {
-                BeginInvoke(new EventHandler<EventArg<string>>(XISOExtractorOnStatus), new[] { sender, e });
+        private void XisoExtractorOnStatus(object sender, EventArg<string> e) {
+            if(InvokeRequired) {
+                BeginInvoke(new EventHandler<EventArg<string>>(XisoExtractorOnStatus), new[] {
+                                                                                                 sender, e
+                                                                                             });
                 return;
             }
             status.Text = e.Data;
         }
 
-        private void XISOExtractorOnOperation(object sender, EventArg<string> e) {
-            if (InvokeRequired) {
-                BeginInvoke(new EventHandler<EventArg<string>>(XISOExtractorOnOperation), new[] { sender, e });
+        private void XisoExtractorOnOperation(object sender, EventArg<string> e) {
+            if(InvokeRequired) {
+                BeginInvoke(new EventHandler<EventArg<string>>(XisoExtractorOnOperation), new[] {
+                                                                                                    sender, e
+                                                                                                });
                 return;
             }
             operation.Text = e.Data;
         }
 
-        private void XISOExtractorFileProgress(object sender, EventArg<double> e) {
-            if (InvokeRequired) {
-                BeginInvoke(new EventHandler<EventArg<double>>(XISOExtractorFileProgress), new[] { sender, e });
+        private void XisoExtractorFileProgress(object sender, EventArg<double> e) {
+            if(InvokeRequired) {
+                BeginInvoke(new EventHandler<EventArg<double>>(XisoExtractorFileProgress), new[] {
+                                                                                                     sender, e
+                                                                                                 });
                 return;
             }
             SetProgress(ref fileprogressbar, (int)e.Data);
         }
 
-        private static void SetProgress(ref ProgressBar pbar, int value)
-        {
-            if (pbar == null)
+        private static void SetProgress(ref ProgressBar pbar, int value) {
+            if(pbar == null)
                 return;
-            if (value > pbar.Maximum)
+            if(value > pbar.Maximum)
                 pbar.Value = pbar.Maximum;
-            else if (value < pbar.Minimum)
+            else if(value < pbar.Minimum)
                 pbar.Value = pbar.Minimum;
             else
                 pbar.Value = value;
         }
 
-        private static void SetProgress(ref ToolStripProgressBar pbar, int value)
-        {
-            if (pbar == null)
+        private static void SetProgress(ref ToolStripProgressBar pbar, int value) {
+            if(pbar == null)
                 return;
-            if (value > pbar.Maximum)
+            if(value > pbar.Maximum)
                 pbar.Value = pbar.Maximum;
-            else if (value < pbar.Minimum)
+            else if(value < pbar.Minimum)
                 pbar.Value = pbar.Minimum;
             else
                 pbar.Value = value;
         }
 
-        private void XISOExtractorTotalProgress(object sender, EventArg<double> e) {
-            if (InvokeRequired) {
-                BeginInvoke(new EventHandler<EventArg<double>>(XISOExtractorTotalProgress), new[] { sender, e });
+        private void XisoExtractorTotalProgress(object sender, EventArg<double> e) {
+            if(InvokeRequired) {
+                BeginInvoke(new EventHandler<EventArg<double>>(XisoExtractorTotalProgress), new[] {
+                                                                                                      sender, e
+                                                                                                  });
                 return;
             }
             SetProgress(ref isoprogressbar, (int)e.Data);
         }
 
-        private void XISOExtractorQueueProgress(object sender, EventArg<double> e)
-        {
-            if (InvokeRequired)
-            {
-                BeginInvoke(new EventHandler<EventArg<double>>(XISOExtractorQueueProgress), new[] { sender, e });
+        private void XisoExtractorQueueProgress(object sender, EventArg<double> e) {
+            if(InvokeRequired) {
+                BeginInvoke(new EventHandler<EventArg<double>>(XisoExtractorQueueProgress), new[] {
+                                                                                                      sender, e
+                                                                                                  });
                 return;
             }
             SetProgress(ref queueprogressbar, (int)e.Data);
         }
 
         private void SeltargetbtnClick(object sender, EventArgs e) {
-            if (!ftpbox.Checked) {
+            if(!ftpbox.Checked) {
                 var sfd = new FolderSelectDialog {
-                                                     Title =
-                                                         "Select where to save the extracted data",
-                                                     InitialDirectory =
-                                                         "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}"
+                                                     Title = "Select where to save the extracted data",
+                                                     InitialDirectory = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}"
                                                  };
-                if (!string.IsNullOrEmpty(srcbox.Text))
-                    sfd.FileName = string.Format("{0}\\{1}",
-                                                 Path.GetDirectoryName(srcbox.Text),
-                                                 Path.GetFileNameWithoutExtension(srcbox.Text));
-                if (sfd.ShowDialog())
+                if(!string.IsNullOrEmpty(srcbox.Text))
+                    sfd.FileName = string.Format("{0}\\{1}", Path.GetDirectoryName(srcbox.Text), Path.GetFileNameWithoutExtension(srcbox.Text));
+                if(sfd.ShowDialog())
                     targetbox.Text = sfd.FileName;
             }
             else {
                 var form = new FTPSettings();
-                if (form.ShowDialog() == DialogResult.OK) {
-                    
-                }
+                if(form.ShowDialog() == DialogResult.OK) {}
             }
         }
 
         private void SelsrcbtnClick(object sender, EventArgs e) {
-            if (ofd.ShowDialog() != DialogResult.OK)
+            if(ofd.ShowDialog() != DialogResult.OK)
                 return;
             srcbox.Text = ofd.FileName;
             ofd.FileName = Path.GetFileName(ofd.FileName);
@@ -130,7 +126,13 @@ namespace XISOExtractorGUI
             SetBusyState();
             bw.RunWorkerCompleted += SingleExtractCompleted;
             bw.DoWork += SingleExtractDoWork;
-            bw.RunWorkerAsync(new BwArgs { Source = srcbox.Text, Target = targetbox.Text, SkipSystemUpdate = skipsysbox.Checked, GenerateFileList = genfilelistbox.Checked});
+            bw.RunWorkerAsync(new BwArgs {
+                                             Source = srcbox.Text,
+                                             Target = targetbox.Text,
+                                             SkipSystemUpdate = skipsysbox.Checked,
+                                             GenerateFileList = genfilelistbox.Checked,
+                                             DeleteIsoOnCompletion = delIsobox.Checked
+                                         });
         }
 
         private void SetBusyState() {
@@ -142,23 +144,22 @@ namespace XISOExtractorGUI
             AllowDrop = false;
         }
 
-        private void AbortOperation(object sender, EventArgs eventArgs) {
-            XISOExtractor.Abort = true;
-        }
+        private void AbortOperation(object sender, EventArgs eventArgs) { XisoExtractor.Abort = true; }
 
         private static void SingleExtractDoWork(object sender, DoWorkEventArgs e) {
-            if (!(e.Argument is BwArgs)) {
+            if(!(e.Argument is BwArgs)) {
                 e.Cancel = true;
                 return;
             }
             var args = e.Argument as BwArgs;
-            e.Result = XISOExtractor.ExtractXISO(new XISOOptions {
-                Source = args.Source,
-                Target = args.Target,
-                ExcludeSysUpdate = args.SkipSystemUpdate,
-                GenerateFileList = args.GenerateFileList,
-                GenerateSFV = args.GenerateSFV
-            });
+            e.Result = XisoExtractor.ExtractXiso(new XisoOptions {
+                                                                     Source = args.Source,
+                                                                     Target = args.Target,
+                                                                     ExcludeSysUpdate = args.SkipSystemUpdate,
+                                                                     GenerateFileList = args.GenerateFileList,
+                                                                     //GenerateSfv = args.GenerateSFV,
+                                                                     DeleteIsoOnCompletion = args.DeleteIsoOnCompletion
+                                                                 });
         }
 
         private void SingleExtractCompleted(object sender, RunWorkerCompletedEventArgs e) {
@@ -171,22 +172,22 @@ namespace XISOExtractorGUI
             addbtn.Text = Resources.AddToQueueBtnText;
             addbtn.Visible = true;
             abortbtn.Visible = false;
+            abortbtn.Size = addbtn.Size;
             SrcboxTextChanged(null, null);
             AllowDrop = true;
         }
 
         private void MainFormFormClosing(object sender, FormClosingEventArgs e) {
             e.Cancel = true;
-            if (bw.IsBusy) {
+            if(bw.IsBusy) {
                 AbortOperation(sender, e);
-                while (bw.IsBusy) {
+                while(bw.IsBusy) {
                     Thread.Sleep(100);
                     Application.DoEvents();
                 }
             }
-            if (XISOFTP.IsConnected) {
+            if(XISOFTP.IsConnected)
                 XISOFTP.Disconnect();
-            }
             e.Cancel = false;
         }
 
@@ -195,19 +196,13 @@ namespace XISOExtractorGUI
             addbtn.Enabled = extractbtn.Enabled;
         }
 
-        private void MainFormDragEnter(object sender, DragEventArgs e) {
-            e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None;
-        }
+        private void MainFormDragEnter(object sender, DragEventArgs e) { e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None; }
 
-        private void MainFormDragDrop(object sender, DragEventArgs e)
-        {
+        private void MainFormDragDrop(object sender, DragEventArgs e) {
             var fileList = (string[])e.Data.GetData(DataFormats.FileDrop, false);
-            foreach (var s in fileList)
-            {
-                if (!s.EndsWith(".iso", StringComparison.CurrentCultureIgnoreCase) &&
-                    !s.EndsWith(".xiso", StringComparison.CurrentCultureIgnoreCase) &&
-                    !s.EndsWith(".360", StringComparison.CurrentCultureIgnoreCase) &&
-                    !s.EndsWith(".000", StringComparison.CurrentCultureIgnoreCase))
+            foreach(var s in fileList) {
+                if(!s.EndsWith(".iso", StringComparison.CurrentCultureIgnoreCase) && !s.EndsWith(".xiso", StringComparison.CurrentCultureIgnoreCase) &&
+                   !s.EndsWith(".360", StringComparison.CurrentCultureIgnoreCase) && !s.EndsWith(".000", StringComparison.CurrentCultureIgnoreCase))
                     continue;
                 srcbox.Text = s;
                 return;
@@ -215,22 +210,22 @@ namespace XISOExtractorGUI
         }
 
         private void AddbtnClick(object sender, EventArgs e) {
-            if (string.IsNullOrEmpty(srcbox.Text))
+            if(string.IsNullOrEmpty(srcbox.Text))
                 return;
             var viewitem = new ListViewItem(_id.ToString(CultureInfo.InvariantCulture));
             viewitem.SubItems.Add(srcbox.Text);
             var target = targetbox.Text;
-            if (string.IsNullOrEmpty(target))
+            if(string.IsNullOrEmpty(target))
                 target = string.Format("{0}\\{1}", Path.GetDirectoryName(srcbox.Text), Path.GetFileNameWithoutExtension(srcbox.Text));
             viewitem.SubItems.Add(target);
-            var queueitem = new BwArgs
-                                {
-                                    Source = srcbox.Text,
-                                    Target = target,
-                                    SkipSystemUpdate = skipsysbox.Checked,
-                                    GenerateFileList = genfilelistbox.Checked,
-                                    GenerateSFV = gensfvbox.Checked
-                                };
+            var queueitem = new BwArgs {
+                                           Source = srcbox.Text,
+                                           Target = target,
+                                           SkipSystemUpdate = skipsysbox.Checked,
+                                           GenerateFileList = genfilelistbox.Checked,
+                                           GenerateSfv = gensfvbox.Checked,
+                                           DeleteIsoOnCompletion = delIsobox.Checked 
+                                       };
             var opt = Program.GetOptString(queueitem);
             viewitem.SubItems.Add(opt);
             queview.Items.Add(viewitem);
@@ -241,11 +236,10 @@ namespace XISOExtractorGUI
             processbtn.Enabled = true;
         }
 
-        private void ProcessbtnClick(object sender, EventArgs e)
-        {
+        private void ProcessbtnClick(object sender, EventArgs e) {
             SetBusyState();
             var list = new List<BwArgs>();
-            foreach (var key in _queDict.Keys)
+            foreach(var key in _queDict.Keys)
                 list.Add(_queDict[key]);
             bw.DoWork += MultiExtractDoWork;
             bw.RunWorkerCompleted += MultiExtractCompleted;
@@ -255,84 +249,90 @@ namespace XISOExtractorGUI
         }
 
         private void QueviewMouseClick(object sender, MouseEventArgs e) {
-            if (e.Button != MouseButtons.Right || !queview.FocusedItem.Bounds.Contains(e.Location) || queview.SelectedItems.Count <= 0)
+            if(e.Button != MouseButtons.Right || !queview.FocusedItem.Bounds.Contains(e.Location) || queview.SelectedItems.Count <= 0)
                 return;
             queueMenu.Show(Cursor.Position);
         }
 
         private void RemoveQueueItem(object sender, EventArgs e) {
-            foreach (ListViewItem entry in queview.SelectedItems)
-            {
+            foreach(ListViewItem entry in queview.SelectedItems) {
                 int id;
-                if (!int.TryParse(entry.SubItems[0].Text, out id))
+                if(!int.TryParse(entry.SubItems[0].Text, out id))
                     continue;
-                if (_queDict.ContainsKey(id))
+                if(_queDict.ContainsKey(id))
                     _queDict.Remove(id);
                 queview.Items.Remove(entry);
             }
         }
 
-        private void EditQueueItem(object sender, EventArgs e)
-        {
+        private void EditQueueItem(object sender, EventArgs e) {
             //TODO: Make edit function
         }
 
-        private void MultiExtractDoWork(object sender, DoWorkEventArgs e)
-        {
+        private void MultiExtractDoWork(object sender, DoWorkEventArgs e) {
             var sw = new Stopwatch();
             sw.Start();
-            if (!(e.Argument is List<BwArgs>))
-            {
+            if(!(e.Argument is List<BwArgs>)) {
                 e.Cancel = true;
                 return;
             }
             var args = e.Argument as List<BwArgs>;
-            XISOExtractor.MultiSize = 0;
-            var list = new XISOListAndSize[args.Count];
-            for (var i = 0; i < args.Count; i++)
-            {
-                if (XISOExtractor.Abort)
+            XisoExtractor.MultiSize = 0;
+            var list = new XisoListAndSize[args.Count];
+            for(var i = 0; i < args.Count; i++) {
+                if(XisoExtractor.Abort)
                     return;
                 BinaryReader br;
-                args[i].Result = XISOExtractor.GetFileListAndSize(
-                    new XISOOptions { Source = args[i].Source, Target = args[i].Target, ExcludeSysUpdate = args[i].SkipSystemUpdate, GenerateFileList = args[i].GenerateFileList, GenerateSFV = args[i].GenerateSFV },
-                    out list[i],
-                    out br);
-                if (br != null)
+                args[i].Result = XisoExtractor.GetFileListAndSize(new XisoOptions {
+                                                                                      Source = args[i].Source,
+                                                                                      Target = args[i].Target,
+                                                                                      ExcludeSysUpdate = args[i].SkipSystemUpdate,
+                                                                                      GenerateFileList = args[i].GenerateFileList,
+                                                                                      //GenerateSfv = args[i].GenerateSFV,
+                                                                                      DeleteIsoOnCompletion = args[i].DeleteIsoOnCompletion
+                                                                                  }, out list[i], out br);
+                if(br != null)
                     br.Close();
-                if (args[i].Result)
-                    XISOExtractor.MultiSize += list[i].Size;
-                args[i].ErrorMsg = XISOExtractor.GetLastError();
+                if(args[i].Result)
+                    XisoExtractor.MultiSize += list[i].Size;
+                args[i].ErrorMsg = XisoExtractor.GetLastError();
                 GC.Collect();
             }
-            for (var i = 0; i < args.Count; i++)
-            {
-                if (XISOExtractor.Abort)
+            for(var i = 0; i < args.Count; i++) {
+                if(XisoExtractor.Abort)
                     return;
-                if (!args[i].Result) continue;
-                args[i].Result = XISOExtractor.ExtractXISO(new XISOOptions { Source = args[i].Source, Target = args[i].Target, ExcludeSysUpdate = args[i].SkipSystemUpdate, GenerateFileList = args[i].GenerateFileList, GenerateSFV = args[i].GenerateSFV }, list[i]);
-                args[i].ErrorMsg = XISOExtractor.GetLastError();
+                if(!args[i].Result)
+                    continue;
+                args[i].Result = XisoExtractor.ExtractXiso(new XisoOptions {
+                                                                               Source = args[i].Source,
+                                                                               Target = args[i].Target,
+                                                                               ExcludeSysUpdate = args[i].SkipSystemUpdate,
+                                                                               GenerateFileList = args[i].GenerateFileList,
+                                                                               //GenerateSfv = args[i].GenerateSFV,
+                                                                               DeleteIsoOnCompletion = args[i].DeleteIsoOnCompletion
+                }, list[i]);
+                args[i].ErrorMsg = XisoExtractor.GetLastError();
             }
-            
+
             var failed = 0;
-            foreach (var result in args)
-                if (!result.Result)
+            foreach(var result in args) {
+                if(!result.Result)
                     failed++;
-            e.Result = failed == 0 ? (object) true : args;
+            }
+            e.Result = failed == 0 ? (object)true : args;
             sw.Stop();
-            XISOExtractorOnOperation(null, new EventArg<string>(string.Format("Completed Queue after {0:F0} Minute(s) and {1} Second(s)", sw.Elapsed.TotalMinutes, sw.Elapsed.Seconds)));
+            XisoExtractorOnOperation(null, new EventArg<string>(string.Format("Completed Queue after {0:F0} Minute(s) and {1} Second(s)", sw.Elapsed.TotalMinutes, sw.Elapsed.Seconds)));
         }
 
-        private void MultiExtractCompleted(object sender, RunWorkerCompletedEventArgs e)
-        {
+        private void MultiExtractCompleted(object sender, RunWorkerCompletedEventArgs e) {
             bw.DoWork -= MultiExtractDoWork;
             bw.RunWorkerCompleted -= MultiExtractCompleted;
             ResetButtons();
-            if (XISOExtractor.Abort) {
+            if(XisoExtractor.Abort) {
                 SetAbortState();
                 return;
             }
-            if (!(e.Result is List<BwArgs>) || MessageBox.Show(Resources.MultiExtractFailed, Resources.ExtractFailed, MessageBoxButtons.OKCancel, MessageBoxIcon.Error) != DialogResult.OK)
+            if(!(e.Result is List<BwArgs>) || MessageBox.Show(Resources.MultiExtractFailed, Resources.ExtractFailed, MessageBoxButtons.OKCancel, MessageBoxIcon.Error) != DialogResult.OK)
                 return;
             var res = new ExtractionResults();
             res.Show(e.Result as List<BwArgs>);
@@ -348,12 +348,13 @@ namespace XISOExtractorGUI
     }
 
     public sealed class BwArgs {
-        internal bool Result;
         internal string ErrorMsg;
+        internal bool GenerateFileList;
+        internal bool GenerateSfv;
+        internal bool Result;
+        internal bool SkipSystemUpdate;
+        internal bool DeleteIsoOnCompletion;
         internal string Source;
         internal string Target;
-        internal bool SkipSystemUpdate;
-        internal bool GenerateFileList;
-        internal bool GenerateSFV;
     }
 }
