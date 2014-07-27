@@ -24,6 +24,9 @@
             XisoExtractor.Status += XisoExtractorOnStatus;
             XisoExtractor.TotalProgress += XisoExtractorQueueProgress;
             ResetButtons();
+#if NOFTP
+            ftpbox.Visible = false;
+#endif
         }
 
         private void XisoExtractorOnStatus(object sender, EventArg<string> e) {
@@ -34,6 +37,7 @@
                 return;
             }
             status.Text = e.Data;
+            logbox.AppendText(e.Data + Environment.NewLine);
         }
 
         private void XisoExtractorOnOperation(object sender, EventArg<string> e) {
@@ -44,6 +48,7 @@
                 return;
             }
             operation.Text = e.Data;
+            //logbox.AppendText(e.Data + Environment.NewLine);
         }
 
         private void XisoExtractorFileProgress(object sender, EventArg<double> e) {
@@ -99,20 +104,24 @@
         }
 
         private void SeltargetbtnClick(object sender, EventArgs e) {
+#if !NOFTP
             if(!ftpbox.Checked) {
-                var sfd = new FolderSelectDialog {
-                                                     Title = "Select where to save the extracted data",
-                                                     InitialDirectory = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}"
-                                                 };
-                if(!string.IsNullOrEmpty(srcbox.Text))
-                    sfd.FileName = string.Format("{0}\\{1}", Path.GetDirectoryName(srcbox.Text), Path.GetFileNameWithoutExtension(srcbox.Text));
-                if(sfd.ShowDialog())
-                    targetbox.Text = sfd.FileName;
+#endif
+            var sfd = new FolderSelectDialog {
+                                                 Title = "Select where to save the extracted data",
+                                                 InitialDirectory = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}"
+                                             };
+            if(!string.IsNullOrEmpty(srcbox.Text))
+                sfd.FileName = string.Format("{0}\\{1}", Path.GetDirectoryName(srcbox.Text), Path.GetFileNameWithoutExtension(srcbox.Text));
+            if(sfd.ShowDialog())
+                targetbox.Text = sfd.FileName;
+#if !NOFTP
             }
             else {
                 var form = new FTPSettings();
                 if(form.ShowDialog() == DialogResult.OK) {}
             }
+#endif
         }
 
         private void SelsrcbtnClick(object sender, EventArgs e) {
@@ -186,8 +195,10 @@
                     Application.DoEvents();
                 }
             }
+#if !NOFTP
             if(XISOFTP.IsConnected)
                 XISOFTP.Disconnect();
+#endif
             e.Cancel = false;
         }
 
@@ -196,7 +207,7 @@
             addbtn.Enabled = extractbtn.Enabled;
         }
 
-        private void MainFormDragEnter(object sender, DragEventArgs e) { e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None; }
+        private void DoDragEnter(object sender, DragEventArgs e) { e.Effect = e.Data.GetDataPresent(DataFormats.FileDrop) ? DragDropEffects.Copy : DragDropEffects.None; }
 
         private void MainFormDragDrop(object sender, DragEventArgs e) {
             var fileList = (string[])e.Data.GetData(DataFormats.FileDrop, false);
@@ -209,12 +220,16 @@
             }
         }
 
-        private void AddbtnClick(object sender, EventArgs e) {
+        private void AddbtnClick(object sender, EventArgs e) { AddQueueItem(true); }
+
+        private void AddQueueItem(bool resetTarget) {
             if(string.IsNullOrEmpty(srcbox.Text))
                 return;
             var viewitem = new ListViewItem(_id.ToString(CultureInfo.InvariantCulture));
             viewitem.SubItems.Add(srcbox.Text);
             var target = targetbox.Text;
+            if(!resetTarget && !string.IsNullOrEmpty(target))
+                target = Path.Combine(target, Path.GetFileNameWithoutExtension(srcbox.Text));
             if(string.IsNullOrEmpty(target))
                 target = string.Format("{0}\\{1}", Path.GetDirectoryName(srcbox.Text), Path.GetFileNameWithoutExtension(srcbox.Text));
             viewitem.SubItems.Add(target);
@@ -223,15 +238,17 @@
                                            Target = target,
                                            SkipSystemUpdate = skipsysbox.Checked,
                                            GenerateFileList = genfilelistbox.Checked,
-                                           GenerateSfv = gensfvbox.Checked,
-                                           DeleteIsoOnCompletion = delIsobox.Checked 
+                                           //GenerateSfv = gensfvbox.Checked,
+                                           DeleteIsoOnCompletion = delIsobox.Checked
                                        };
             var opt = Program.GetOptString(queueitem);
             viewitem.SubItems.Add(opt);
             queview.Items.Add(viewitem);
             _queDict.Add(_id, queueitem);
             _id++;
-            targetbox.Text = "";
+
+            if(resetTarget)
+                targetbox.Text = "";
             srcbox.Text = "";
             processbtn.Enabled = true;
         }
@@ -310,7 +327,7 @@
                                                                                GenerateFileList = args[i].GenerateFileList,
                                                                                //GenerateSfv = args[i].GenerateSFV,
                                                                                DeleteIsoOnCompletion = args[i].DeleteIsoOnCompletion
-                }, list[i]);
+                                                                           }, list[i]);
                 args[i].ErrorMsg = XisoExtractor.GetLastError();
             }
 
@@ -321,7 +338,9 @@
             }
             e.Result = failed == 0 ? (object)true : args;
             sw.Stop();
-            XisoExtractorOnOperation(null, new EventArg<string>(string.Format("Completed Queue after {0:F0} Minute(s) and {1} Second(s)", sw.Elapsed.TotalMinutes, sw.Elapsed.Seconds)));
+            var msg = string.Format("Completed Queue after {0:F0} Minute(s) and {1} Second(s)", sw.Elapsed.TotalMinutes, sw.Elapsed.Seconds);
+            XisoExtractorOnOperation(null, new EventArg<string>(msg));
+            logbox.AppendText(msg + Environment.NewLine);
         }
 
         private void MultiExtractCompleted(object sender, RunWorkerCompletedEventArgs e) {
@@ -344,16 +363,53 @@
             SetProgress(ref queueprogressbar, fileprogressbar.Minimum);
             status.Text = Resources.OperationAbortedByUser;
             operation.Text = Resources.OperationAbortedByUser;
+            logbox.AppendText(Resources.OperationAbortedByUser + Environment.NewLine);
         }
+
+        private void queview_DragDrop(object sender, DragEventArgs e) {
+            var fileList = (string[])e.Data.GetData(DataFormats.FileDrop, false);
+            foreach(var s in fileList) {
+                if(File.Exists(s)) {
+                    if(!s.EndsWith(".iso", StringComparison.CurrentCultureIgnoreCase) && !s.EndsWith(".xiso", StringComparison.CurrentCultureIgnoreCase) &&
+                       !s.EndsWith(".360", StringComparison.CurrentCultureIgnoreCase) && !s.EndsWith(".000", StringComparison.CurrentCultureIgnoreCase))
+                        continue;
+                    srcbox.Text = s;
+                    AddQueueItem(false);
+                }
+                else
+                    ScanDragDropMulti(s);
+            }
+        }
+
+        private void ScanDragDropMulti(string dir) {
+            foreach(var s in Directory.GetFiles(dir)) {
+                if(!s.EndsWith(".iso", StringComparison.CurrentCultureIgnoreCase) && !s.EndsWith(".xiso", StringComparison.CurrentCultureIgnoreCase) &&
+                   !s.EndsWith(".360", StringComparison.CurrentCultureIgnoreCase) && !s.EndsWith(".000", StringComparison.CurrentCultureIgnoreCase))
+                    continue;
+                srcbox.Text = s;
+                AddQueueItem(false);
+            }
+            foreach(var s in Directory.GetDirectories(dir))
+                ScanDragDropMulti(s);
+        }
+
+        private void saveToolStripMenuItem_Click(object sender, EventArgs e) {
+            var sfd = new SaveFileDialog();
+            if(sfd.ShowDialog() != DialogResult.OK)
+                return;
+            File.WriteAllLines(sfd.FileName, logbox.Lines);
+        }
+
+        private void clearToolStripMenuItem_Click(object sender, EventArgs e) { logbox.Text = ""; }
     }
 
     public sealed class BwArgs {
+        internal bool DeleteIsoOnCompletion;
         internal string ErrorMsg;
         internal bool GenerateFileList;
         internal bool GenerateSfv;
         internal bool Result;
         internal bool SkipSystemUpdate;
-        internal bool DeleteIsoOnCompletion;
         internal string Source;
         internal string Target;
     }
