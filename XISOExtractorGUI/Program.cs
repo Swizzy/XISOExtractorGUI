@@ -10,12 +10,12 @@
         /// The main entry point for the application.
         /// </summary>
         [STAThread]
-        static void Main()
+        static void Main(string[] args)
         {
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainAssemblyResolve;
-            Application.Run(new MainForm());
+            Application.Run(new MainForm(args));
         }
 
         static Assembly CurrentDomainAssemblyResolve(object sender, ResolveEventArgs args) {

@@ -14,7 +14,7 @@
         private readonly Dictionary<int, BwArgs> _queDict = new Dictionary<int, BwArgs>();
         private int _id;
 
-        internal MainForm() {
+        internal MainForm(string[] args) {
             InitializeComponent();
             var ver = Assembly.GetExecutingAssembly().GetName().Version;
             Text = string.Format(Text, ver.Major, ver.Minor, ver.Build);
@@ -27,6 +27,12 @@
 #if NOFTP
             ftpbox.Visible = false;
 #endif
+            if(args.Length <= 0)
+                return;
+            srcbox.Text = args[0];
+            if(args.Length >= 2)
+                targetbox.Text = args[1];
+            ExtractbtnClick(null, null);
         }
 
         private void XisoExtractorOnStatus(object sender, EventArg<string> e) {

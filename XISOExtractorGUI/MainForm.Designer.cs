@@ -436,6 +436,7 @@
             // 
             // logbox
             // 
+            this.logbox.ContextMenuStrip = this.logMenu;
             this.logbox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.logbox.Location = new System.Drawing.Point(3, 18);
             this.logbox.Name = "logbox";
