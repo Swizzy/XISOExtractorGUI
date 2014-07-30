@@ -60,6 +60,7 @@
             this.bw = new System.ComponentModel.BackgroundWorker();
             this.ofd = new System.Windows.Forms.OpenFileDialog();
             this.statusStrip2 = new System.Windows.Forms.StatusStrip();
+            this.etalabel = new System.Windows.Forms.ToolStripStatusLabel();
             this.status = new System.Windows.Forms.ToolStripStatusLabel();
             this.queueMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.removeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
@@ -70,6 +71,7 @@
             this.logMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.clearToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.etatimer = new System.Windows.Forms.Timer(this.components);
             this.groupBox1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.statusStrip2.SuspendLayout();
@@ -369,6 +371,7 @@
             // 
             this.statusStrip2.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
             this.statusStrip2.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.etalabel,
             this.status});
             this.statusStrip2.Location = new System.Drawing.Point(0, 478);
             this.statusStrip2.Name = "statusStrip2";
@@ -377,6 +380,11 @@
             this.statusStrip2.SizingGrip = false;
             this.statusStrip2.TabIndex = 9;
             this.statusStrip2.Text = "statusStrip2";
+            // 
+            // etalabel
+            // 
+            this.etalabel.Name = "etalabel";
+            this.etalabel.Size = new System.Drawing.Size(0, 20);
             // 
             // status
             // 
@@ -466,6 +474,10 @@
             this.clearToolStripMenuItem.Size = new System.Drawing.Size(112, 24);
             this.clearToolStripMenuItem.Text = "Clear";
             this.clearToolStripMenuItem.Click += new System.EventHandler(this.clearToolStripMenuItem_Click);
+            // 
+            // etatimer
+            // 
+            this.etatimer.Tick += new System.EventHandler(this.etatimer_Tick);
             // 
             // MainForm
             // 
@@ -559,5 +571,7 @@
         private System.Windows.Forms.ContextMenuStrip logMenu;
         private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem clearToolStripMenuItem;
+        private System.Windows.Forms.ToolStripStatusLabel etalabel;
+        private System.Windows.Forms.Timer etatimer;
     }
 }

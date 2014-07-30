@@ -13,8 +13,9 @@
     internal sealed partial class MainForm: Form {
         private readonly Dictionary<int, BwArgs> _queDict = new Dictionary<int, BwArgs>();
         private int _id;
+        private EtaCalculator _eta = new EtaCalculator();
 
-        internal MainForm(string[] args) {
+        internal MainForm(IList<string> args) {
             InitializeComponent();
             var ver = Assembly.GetExecutingAssembly().GetName().Version;
             Text = string.Format(Text, ver.Major, ver.Minor, ver.Build);
@@ -24,13 +25,14 @@
             XisoExtractor.Status += XisoExtractorOnStatus;
             XisoExtractor.TotalProgress += XisoExtractorQueueProgress;
             ResetButtons();
+            etatimer.Start();
 #if NOFTP
             ftpbox.Visible = false;
 #endif
-            if(args.Length <= 0)
+            if(args.Count <= 0)
                 return;
             srcbox.Text = args[0];
-            if(args.Length >= 2)
+            if(args.Count >= 2)
                 targetbox.Text = args[1];
             ExtractbtnClick(null, null);
         }
@@ -141,6 +143,7 @@
             SetBusyState();
             bw.RunWorkerCompleted += SingleExtractCompleted;
             bw.DoWork += SingleExtractDoWork;
+            _eta.Reset();
             bw.RunWorkerAsync(new BwArgs {
                                              Source = srcbox.Text,
                                              Target = targetbox.Text,
@@ -180,6 +183,7 @@
         private void SingleExtractCompleted(object sender, RunWorkerCompletedEventArgs e) {
             bw.RunWorkerCompleted -= SingleExtractCompleted;
             bw.DoWork -= SingleExtractDoWork;
+            etalabel.Text = "";
             ResetButtons();
         }
 
@@ -266,6 +270,7 @@
                 list.Add(_queDict[key]);
             bw.DoWork += MultiExtractDoWork;
             bw.RunWorkerCompleted += MultiExtractCompleted;
+            _eta.Reset();
             bw.RunWorkerAsync(list);
             _queDict.Clear();
             queview.Items.Clear();
@@ -344,14 +349,14 @@
             }
             e.Result = failed == 0 ? (object)true : args;
             sw.Stop();
-            var msg = string.Format("Completed Queue after {0:F0} Minute(s) and {1} Second(s)", sw.Elapsed.TotalMinutes, sw.Elapsed.Seconds);
-            XisoExtractorOnOperation(null, new EventArg<string>(msg));
-            logbox.AppendText(msg + Environment.NewLine);
+            XisoExtractorOnOperation(null, new EventArg<string>(string.Format("Completed Queue after {0:F0} Minute(s) and {1} Second(s)", sw.Elapsed.TotalMinutes, sw.Elapsed.Seconds)));
+            XisoExtractorOnStatus(null, new EventArg<string>(string.Format("Completed Queue after {0:F0} Minute(s) and {1} Second(s)", sw.Elapsed.TotalMinutes, sw.Elapsed.Seconds)));
         }
 
         private void MultiExtractCompleted(object sender, RunWorkerCompletedEventArgs e) {
             bw.DoWork -= MultiExtractDoWork;
             bw.RunWorkerCompleted -= MultiExtractCompleted;
+            etalabel.Text = "";
             ResetButtons();
             if(XisoExtractor.Abort) {
                 SetAbortState();
@@ -407,6 +412,17 @@
         }
 
         private void clearToolStripMenuItem_Click(object sender, EventArgs e) { logbox.Text = ""; }
+
+        private void etatimer_Tick(object sender, EventArgs e)
+        {
+            if(isoprogressbar.Value == isoprogressbar.Maximum || isoprogressbar.Value == isoprogressbar.Minimum) {
+                etalabel.Text = "";
+                return;
+            }
+            _eta.Update(queueprogressbar.Value <= 0 ? (float)isoprogressbar.Value / isoprogressbar.Maximum : (float)queueprogressbar.Value / queueprogressbar.Maximum);
+            var ts = _eta.ETR;
+            etalabel.Text = ts.TotalSeconds < 1 ? "" : string.Format("TimeLeft: {0:F0} Minute(s) {1:D2} Second(s)", ts.TotalMinutes, ts.Seconds);
+        }
     }
 
     public sealed class BwArgs {

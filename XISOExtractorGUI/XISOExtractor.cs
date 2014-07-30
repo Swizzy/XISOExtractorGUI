@@ -118,7 +118,7 @@
                     return false;
                 _errorlevel = 0;
                 if(ExtractXiso(opts, retval, ref br)) {
-                    if (opts.DeleteIsoOnCompletion) {
+                    if(opts.DeleteIsoOnCompletion) {
                         br.Close();
                         File.Delete(opts.Source);
                     }
@@ -411,10 +411,10 @@
     }
 
     internal sealed class XisoOptions {
+        public bool DeleteIsoOnCompletion;
         public bool ExcludeSysUpdate = true;
         public bool GenerateFileList;
         //public bool GenerateSfv;
-        public bool DeleteIsoOnCompletion;
         public string Source;
         public string Target;
     }
