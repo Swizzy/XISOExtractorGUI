@@ -5,11 +5,10 @@ namespace XISOExtractorGUI
     using System;
     using System.Collections.Generic;
     using System.ComponentModel;
-    using System.Net;
+    using System.Net.FtpClient;
     using XISOExtractorGUI.Properties;
 
     internal sealed partial class FTPSettings : Form {
-        private static readonly XISOFTP.FTPSettingsData Settings = new XISOFTP.FTPSettingsData();
         private static readonly ImageList Imglist = new ImageList();
         delegate void SetNodeCallback(TreeNode node);
         delegate void SetNodeCallback2(TreeNode node, TreeNode src);
@@ -77,15 +76,19 @@ namespace XISOExtractorGUI
 
         private void BWOnRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs runWorkerCompletedEventArgs) {
             status.Text = Resources.DoneWaitingForFurtherInstructions;
+            if(runWorkerCompletedEventArgs.Result != null)
+                MessageBox.Show(runWorkerCompletedEventArgs.Result.ToString());
         }
 
         private void BWOnDoWork(object sender, DoWorkEventArgs e) {
             if (!(e.Argument is NodeListItem))
                 return;
             var src = e.Argument as NodeListItem;
-            var list = new List<XISOFTP.FTPDirList>();
-            if (!XISOFTP.GetDirListing(src.Src, ref list))
+            var list = new List<Xisoftp.FTPDirList>();
+            if(!Xisoftp.GetDirListing(src.Src, ref list)) {
+                e.Result = Xisoftp.LastError;
                 return;
+            }
             foreach (var ftpDirList in list)
             {
                 var node = new TreeNode(ftpDirList.Name)
@@ -126,12 +129,13 @@ namespace XISOExtractorGUI
 
         private void FTPSettingsLoad(object sender, EventArgs e)
         {
-            hostbox.Text = Settings.Host;
-            userbox.Text = Settings.User;
-            passbox.Text = Settings.Password;
-            portbox.Value = Settings.Port;
-            pathbox.Text = Settings.Path;
-            switch (Settings.DataConnectionType) {
+            hostbox.Text = Program.Form.FtpSettings.Host;
+            userbox.Text = Program.Form.FtpSettings.User;
+            passbox.Text = Program.Form.FtpSettings.Password;
+            portbox.Value = Program.Form.FtpSettings.Port;
+            pathbox.Text = Program.Form.FtpSettings.Path;
+            switch (Program.Form.FtpSettings.DataConnectionType)
+            {
                 case FtpDataConnectionType.PASV:
                     PASV.Checked = true;
                     break;
@@ -146,19 +150,19 @@ namespace XISOExtractorGUI
 
         private void SaveBtnClick(object sender, EventArgs e)
         {
-            XISOFTP.Disconnect();
-            Settings.Host = hostbox.Text;
-            Settings.User = userbox.Text;
-            Settings.Password = passbox.Text;
-            Settings.Port = (int) portbox.Value;
-            Settings.DataConnectionType = GetConnectionType();
-            Settings.Path = pathbox.Text;
+            Xisoftp.Disconnect();
+            Program.Form.FtpSettings.Host = hostbox.Text;
+            Program.Form.FtpSettings.User = userbox.Text;
+            Program.Form.FtpSettings.Password = passbox.Text;
+            Program.Form.FtpSettings.Port = (int)portbox.Value;
+            Program.Form.FtpSettings.DataConnectionType = GetConnectionType();
+            Program.Form.FtpSettings.Path = pathbox.Text;
         }
 
         private void HostboxTextChanged(object sender, EventArgs e)
         {
-            Connectbtn.Enabled = hostbox.Text.Length > 0 && !XISOFTP.IsConnected;
-            Connectbtn.Visible = hostbox.Text.Length > 0 && !XISOFTP.IsConnected;
+            Connectbtn.Enabled = hostbox.Text.Length > 0 && !Xisoftp.IsConnected;
+            Connectbtn.Visible = hostbox.Text.Length > 0 && !Xisoftp.IsConnected;
         }
 
         private void ConworkerDoWork(object sender, DoWorkEventArgs e)
@@ -166,7 +170,7 @@ namespace XISOExtractorGUI
             if (!(e.Argument is FTPConnectionSettings))
                 return;
             var settings = e.Argument as FTPConnectionSettings;
-            e.Result = XISOFTP.Connect(settings.Host, settings.Port, settings.DataConnectionType, settings.User, settings.Password);
+            e.Result = Xisoftp.Connect(settings.Host, settings.Port, settings.DataConnectionType, settings.User, settings.Password);
         }
 
         private void ConworkerRunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
@@ -177,7 +181,7 @@ namespace XISOExtractorGUI
             {
                 Connectbtn.Enabled = true;
                 SetState(true);
-                MessageBox.Show(XISOFTP.LastError);
+                MessageBox.Show(Xisoftp.LastError);
                 return;
             }
             treeView1.Nodes.Clear();
@@ -216,7 +220,7 @@ namespace XISOExtractorGUI
 
         private void DisconnectbtnClick(object sender, EventArgs e)
         {
-            XISOFTP.Disconnect();
+            Xisoftp.Disconnect();
             HostboxTextChanged(null, null);
             disconnectbtn.Visible = false;
             disconnectbtn.Enabled = false;
@@ -225,8 +229,8 @@ namespace XISOExtractorGUI
         private void FTPSettingsFormClosing(object sender, FormClosingEventArgs e)
         {
             e.Cancel = true;
-            if (XISOFTP.IsConnected)
-                XISOFTP.Disconnect();
+            if (Xisoftp.IsConnected)
+                Xisoftp.Disconnect();
             e.Cancel = false;
         }
     }

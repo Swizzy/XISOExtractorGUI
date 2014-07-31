@@ -13,6 +13,18 @@
         internal static long MultiSize;
         private static int _errorlevel;
 
+        static XisoExtractor() {
+            Xisoftp.ProgressUpdate += (sender, arg) => {
+                                          _totalProcessed += arg.Data;
+                                          UpdateFileProgress(((double)arg.Data2 / arg.Data3) * 100, arg.Data);
+                                          UpdateIsoProgress(((double)_totalProcessed / _totalSize) * 100);
+                                          if(MultiSize <= 0)
+                                              return;
+                                          _multiProcessed += arg.Data;
+                                          UpdateTotalProgress(((double)_multiProcessed / MultiSize) * 100);
+                                      };
+        }
+
         internal static event EventHandler<EventArg<string>> Operation;
 
         internal static event EventHandler<EventArg<string>> Status;
@@ -21,7 +33,7 @@
 
         internal static event EventHandler<EventArg<double>> IsoProgress;
 
-        internal static event EventHandler<EventArg<double>> FileProgress;
+        internal static event EventHandler<EventArg<double, long>> FileProgress;
 
         private static string GetErrorString(int error) {
             switch(error) {
@@ -162,13 +174,67 @@
 
         private static bool ExtractXiso(XisoOptions opts, XisoListAndSize retval, ref BinaryReader br) {
             _errorlevel = 0;
-            if(GetTotalFreeSpace(opts.Target) > retval.Size) {
+            if(opts.UseFtp && opts.FtpOpts.IsValid)
+                return ExtractFiles(ref br, ref retval.List, opts.FtpOpts, opts);
+            if(opts.UseFtp)
+                opts.Target = Path.Combine(Path.GetDirectoryName(opts.Source), Path.GetFileNameWithoutExtension(opts.Source));
+            var space = GetTotalFreeSpace(opts.Target);
+            if(space > retval.Size) {
                 _totalSize = retval.Size;
                 return ExtractFiles(ref br, ref retval.List, opts.Target);
             }
             _errorlevel = 5;
-            UpdateStatus(string.Format("Extraction failed! (Not enough space on drive) space needed: {0}", Utils.GetSizeReadable(retval.Size)));
+            UpdateStatus(string.Format("Extraction failed! (Not enough space on drive) space needed: {0} Space available: {1}", Utils.GetSizeReadable(retval.Size), space));
             return false;
+        }
+
+        private static bool ExtractFiles(ref BinaryReader br, ref List<XisoTableData> list, Xisoftp.FTPSettingsData ftpOpts, XisoOptions xisoOpts) {
+            _totalProcessed = 0;
+            if(list.Count == 0)
+                return false;
+            UpdateStatus("Connecting to server...");
+            if(!Xisoftp.Connect(ftpOpts.Host, ftpOpts.Port, ftpOpts.DataConnectionType, ftpOpts.User, ftpOpts.Password)) {
+                UpdateStatus(string.Format("Connection failed! Last Error: {0}", Xisoftp.LastError));
+                return false;
+            }
+            if(!Xisoftp.SetDirectory(ftpOpts.Path)) {
+                UpdateStatus(string.Format("Set Directory Failure! Last Error: {0}", Xisoftp.LastError));
+                Xisoftp.Disconnect();
+                return false;
+            }
+            UpdateStatus(string.Format("Creating Directory: {0}", xisoOpts.Target));
+            if(!Xisoftp.CreateDirectory(xisoOpts.Target)) {
+                UpdateStatus(string.Format("Create target Directory Failure! Last Error: {0}", Xisoftp.LastError));
+                Xisoftp.Disconnect();
+                return false;
+            }
+            ftpOpts.Path += xisoOpts.Target;
+            UpdateOperation(string.Format("Extracting files to ftp:{0}", ftpOpts.Path));
+            foreach(var entry in list) {
+                if(entry.IsFile)
+                    continue;
+                var dir = ftpOpts.Path + (entry.Path.Substring(1) + entry.Name).Replace("\\", "/");
+                UpdateStatus(string.Format("Creating Directory: {0}", dir));
+                Xisoftp.CreateDirectory(dir);
+            }
+            foreach(var entry in list) {
+                if(Abort)
+                    return false;
+                if(!entry.IsFile)
+                    continue;
+                if(!Xisoftp.SetDirectory((ftpOpts.Path + entry.Path.Replace("\\", "/")).Replace("//", "/"))) {
+                    UpdateStatus(string.Format("Set Directory Failure! Last Error: {0}", Xisoftp.LastError));
+                    Xisoftp.Disconnect();
+                    return false;
+                }
+                UpdateStatus(string.Format("Extracting {0}{1} ({2})", entry.Path, entry.Name, Utils.GetSizeReadable(entry.Size)));
+                if(!Xisoftp.SendFile(entry.Name, ref br, entry.Offset, entry.Size)) {
+                    UpdateStatus(string.Format("Send File Failure! Last Error: {0}", Xisoftp.LastError));
+                    Xisoftp.Disconnect();
+                    return false;
+                }
+            }
+            return true;
         }
 
         private static uint GetSmallest(uint val1, uint val2) { return val1 < val2 ? val1 : val2; }
@@ -187,7 +253,7 @@
                 handler(null, new EventArg<string>(operation));
         }
 
-        private static void UpdateStatus(string status) {
+        internal static void UpdateStatus(string status) {
             var handler = Status;
             if(handler != null)
                 handler(null, new EventArg<string>(status));
@@ -205,10 +271,10 @@
                 handler(null, new EventArg<double>(progress));
         }
 
-        private static void UpdateFileProgress(double progress) {
+        private static void UpdateFileProgress(double progress, long size) {
             var handler = FileProgress;
             if(handler != null)
-                handler(null, new EventArg<double>(progress));
+                handler(null, new EventArg<double, long>(progress, size));
         }
 
         private static bool VerifyXiso(string filename) {
@@ -372,25 +438,28 @@
 
         private static bool ExtractFile(ref BinaryReader br, long offset, uint size, string target) {
             _errorlevel = 4;
-            if(!BinarySeek(ref br, offset, size))
+            if(!BinarySeek(ref br, offset, size)) {
+                UpdateStatus("Seek failure");
                 return false;
-            var bw = new BinaryWriter(File.Open(target, FileMode.Create, FileAccess.Write, FileShare.None));
-            _errorlevel = 0;
-            for(uint i = 0; i < size;) {
-                if(Abort)
-                    return false;
-                var readsize = GetSmallest(size - i, ReadWriteBuffer);
-                bw.Write(br.ReadBytes((int)readsize));
-                _totalProcessed += readsize;
-                i += readsize;
-                UpdateFileProgress(((double)i / size) * 100);
-                UpdateIsoProgress(((double)_totalProcessed / _totalSize) * 100);
-                if(MultiSize <= 0)
-                    continue;
-                _multiProcessed += readsize;
-                UpdateTotalProgress(((double)_multiProcessed / MultiSize) * 100);
             }
-            bw.Close();
+            using(var bw = new BinaryWriter(File.Open(target, FileMode.Create, FileAccess.Write, FileShare.None))) {
+                _errorlevel = 0;
+                UpdateFileProgress(0, 0);
+                for(uint i = 0; i < size;) {
+                    if(Abort)
+                        return false;
+                    var readsize = GetSmallest(size - i, ReadWriteBuffer);
+                    bw.Write(br.ReadBytes((int)readsize));
+                    _totalProcessed += readsize;
+                    i += readsize;
+                    UpdateFileProgress(((double)i / size) * 100, readsize);
+                    UpdateIsoProgress(((double)_totalProcessed / _totalSize) * 100);
+                    if(MultiSize <= 0)
+                        continue;
+                    _multiProcessed += readsize;
+                    UpdateTotalProgress(((double)_multiProcessed / MultiSize) * 100);
+                }
+            }
             return true;
         }
     }
@@ -413,9 +482,11 @@
     internal sealed class XisoOptions {
         public bool DeleteIsoOnCompletion;
         public bool ExcludeSysUpdate = true;
+        public Xisoftp.FTPSettingsData FtpOpts;
         public bool GenerateFileList;
         //public bool GenerateSfv;
         public string Source;
         public string Target;
+        public bool UseFtp;
     }
 }

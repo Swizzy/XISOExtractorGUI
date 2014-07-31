@@ -71,7 +71,7 @@
             this.logMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.clearToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.etatimer = new System.Windows.Forms.Timer(this.components);
+            this.speedlbl = new System.Windows.Forms.ToolStripStatusLabel();
             this.groupBox1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.statusStrip2.SuspendLayout();
@@ -298,6 +298,7 @@
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripStatusLabel1,
             this.fileprogressbar,
+            this.speedlbl,
             this.operation});
             this.statusStrip1.Location = new System.Drawing.Point(0, 503);
             this.statusStrip1.Name = "statusStrip1";
@@ -475,9 +476,10 @@
             this.clearToolStripMenuItem.Text = "Clear";
             this.clearToolStripMenuItem.Click += new System.EventHandler(this.clearToolStripMenuItem_Click);
             // 
-            // etatimer
+            // speedlbl
             // 
-            this.etatimer.Tick += new System.EventHandler(this.etatimer_Tick);
+            this.speedlbl.Name = "speedlbl";
+            this.speedlbl.Size = new System.Drawing.Size(0, 21);
             // 
             // MainForm
             // 
@@ -572,6 +574,6 @@
         private System.Windows.Forms.ToolStripMenuItem saveToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem clearToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel etalabel;
-        private System.Windows.Forms.Timer etatimer;
+        private System.Windows.Forms.ToolStripStatusLabel speedlbl;
     }
 }

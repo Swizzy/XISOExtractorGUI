@@ -3,17 +3,27 @@
     using System.Collections.Generic;
     using System.ComponentModel;
     using System.Diagnostics;
+    using System.Drawing;
     using System.Globalization;
     using System.IO;
     using System.Reflection;
     using System.Threading;
     using System.Windows.Forms;
     using XISOExtractorGUI.Properties;
+    using Timer = System.Windows.Forms.Timer;
 
     internal sealed partial class MainForm: Form {
+        internal readonly Xisoftp.FTPSettingsData FtpSettings = new Xisoftp.FTPSettingsData();
+        private readonly EtaCalculator _eta = new EtaCalculator();
         private readonly Dictionary<int, BwArgs> _queDict = new Dictionary<int, BwArgs>();
+
+        private readonly Timer _timer = new Timer {
+                                                      Interval = 1000,
+                                                      Enabled = true
+                                                  };
+
         private int _id;
-        private EtaCalculator _eta = new EtaCalculator();
+        private long _processedData;
 
         internal MainForm(IList<string> args) {
             InitializeComponent();
@@ -24,8 +34,15 @@
             XisoExtractor.Operation += XisoExtractorOnOperation;
             XisoExtractor.Status += XisoExtractorOnStatus;
             XisoExtractor.TotalProgress += XisoExtractorQueueProgress;
+            _timer.Tick += (sender, eventArgs) => {
+                               speedlbl.Text = GetSpeed();
+                               if(queueprogressbar.Value == queueprogressbar.Minimum)
+                                   _eta.Update((float)isoprogressbar.Value / isoprogressbar.Maximum);
+                               else
+                                   _eta.Update((float)queueprogressbar.Value / queueprogressbar.Maximum);
+                               UpdateTimeLeft();
+                           };
             ResetButtons();
-            etatimer.Start();
 #if NOFTP
             ftpbox.Visible = false;
 #endif
@@ -45,7 +62,7 @@
                 return;
             }
             status.Text = e.Data;
-            logbox.AppendText(e.Data + Environment.NewLine);
+            logbox.AppendText(DateTime.Now.ToString("HH:mm:ss ") + e.Data + Environment.NewLine);
         }
 
         private void XisoExtractorOnOperation(object sender, EventArg<string> e) {
@@ -56,28 +73,44 @@
                 return;
             }
             operation.Text = e.Data;
-            //logbox.AppendText(e.Data + Environment.NewLine);
+            //logbox.AppendText(DateTime.Now.ToString("HH:mm:ss ") + e.Data + Environment.NewLine);
         }
 
-        private void XisoExtractorFileProgress(object sender, EventArg<double> e) {
+        private void XisoExtractorFileProgress(object sender, EventArg<double, long> e) {
             if(InvokeRequired) {
-                BeginInvoke(new EventHandler<EventArg<double>>(XisoExtractorFileProgress), new[] {
-                                                                                                     sender, e
-                                                                                                 });
+                BeginInvoke(new EventHandler<EventArg<double, long>>(XisoExtractorFileProgress), new[] {
+                                                                                                           sender, e
+                                                                                                       });
                 return;
             }
             SetProgress(ref fileprogressbar, (int)e.Data);
+            _processedData += e.Data2;
+        }
+
+        private string GetSpeed() {
+            var proc = _processedData;
+            _processedData = 0;
+            if(!bw.IsBusy)
+                return "";
+            return Utils.GetSizeReadable(proc) + "/s";
         }
 
         private static void SetProgress(ref ProgressBar pbar, int value) {
             if(pbar == null)
                 return;
             if(value > pbar.Maximum)
-                pbar.Value = pbar.Maximum;
+                value = pbar.Maximum;
             else if(value < pbar.Minimum)
-                pbar.Value = pbar.Minimum;
-            else
-                pbar.Value = value;
+                value = pbar.Minimum;
+            pbar.Value = value;
+            pbar.Refresh();
+            if(value == pbar.Minimum || value == pbar.Maximum)
+                return;
+            using(var gr = pbar.CreateGraphics()) {
+                gr.DrawString(value + "%", SystemFonts.DefaultFont, Brushes.Black,
+                              new PointF(pbar.Width / 2 - (gr.MeasureString(value + "%", SystemFonts.DefaultFont).Width / 2.0F),
+                                         pbar.Height / 2 - (gr.MeasureString(value + "%", SystemFonts.DefaultFont).Height / 2.0F)));
+            }
         }
 
         private static void SetProgress(ref ToolStripProgressBar pbar, int value) {
@@ -89,6 +122,7 @@
                 pbar.Value = pbar.Minimum;
             else
                 pbar.Value = value;
+
         }
 
         private void XisoExtractorTotalProgress(object sender, EventArg<double> e) {
@@ -111,18 +145,30 @@
             SetProgress(ref queueprogressbar, (int)e.Data);
         }
 
+        private void UpdateTimeLeft() {
+            if(!bw.IsBusy || _eta.ETR.TotalSeconds <= 1) {
+                etalabel.Text = "";
+                return;
+            }
+            var ts = _eta.ETR;
+            var label = "Time Left:";
+            if(ts.TotalHours >= 1)
+                label += ts.TotalHours.ToString("F0") + " Hour(s)";
+            etalabel.Text = string.Format("{0} {1} Minute(s) {2} Second(s)", label, ts.Minutes, ts.Seconds);
+        }
+
         private void SeltargetbtnClick(object sender, EventArgs e) {
 #if !NOFTP
             if(!ftpbox.Checked) {
 #endif
-            var sfd = new FolderSelectDialog {
-                                                 Title = "Select where to save the extracted data",
-                                                 InitialDirectory = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}"
-                                             };
-            if(!string.IsNullOrEmpty(srcbox.Text))
-                sfd.FileName = string.Format("{0}\\{1}", Path.GetDirectoryName(srcbox.Text), Path.GetFileNameWithoutExtension(srcbox.Text));
-            if(sfd.ShowDialog())
-                targetbox.Text = sfd.FileName;
+                var sfd = new FolderSelectDialog {
+                                                     Title = "Select where to save the extracted data",
+                                                     InitialDirectory = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}"
+                                                 };
+                if(!string.IsNullOrEmpty(srcbox.Text))
+                    sfd.FileName = string.Format("{0}\\{1}", Path.GetDirectoryName(srcbox.Text), Path.GetFileNameWithoutExtension(srcbox.Text));
+                if(sfd.ShowDialog())
+                    targetbox.Text = sfd.FileName;
 #if !NOFTP
             }
             else {
@@ -144,13 +190,19 @@
             bw.RunWorkerCompleted += SingleExtractCompleted;
             bw.DoWork += SingleExtractDoWork;
             _eta.Reset();
-            bw.RunWorkerAsync(new BwArgs {
-                                             Source = srcbox.Text,
-                                             Target = targetbox.Text,
-                                             SkipSystemUpdate = skipsysbox.Checked,
-                                             GenerateFileList = genfilelistbox.Checked,
-                                             DeleteIsoOnCompletion = delIsobox.Checked
-                                         });
+            var bwargs = new BwArgs {
+                                        Source = srcbox.Text,
+                                        Target = targetbox.Text,
+                                        SkipSystemUpdate = skipsysbox.Checked,
+                                        GenerateFileList = genfilelistbox.Checked,
+                                        DeleteIsoOnCompletion = delIsobox.Checked,
+                                        UseFTP = ftpbox.Checked,
+                                        FtpSettings = FtpSettings
+                                    };
+
+            if(bwargs.UseFTP && (bwargs.Target.IndexOf(':') > 0 || string.IsNullOrEmpty(bwargs.Target)))
+                bwargs.Target = Path.GetFileNameWithoutExtension(srcbox.Text);
+            bw.RunWorkerAsync(bwargs);
         }
 
         private void SetBusyState() {
@@ -176,6 +228,8 @@
                                                                      ExcludeSysUpdate = args.SkipSystemUpdate,
                                                                      GenerateFileList = args.GenerateFileList,
                                                                      //GenerateSfv = args.GenerateSFV,
+                                                                     UseFtp = args.UseFTP,
+                                                                     FtpOpts = args.FtpSettings,
                                                                      DeleteIsoOnCompletion = args.DeleteIsoOnCompletion
                                                                  });
         }
@@ -206,8 +260,8 @@
                 }
             }
 #if !NOFTP
-            if(XISOFTP.IsConnected)
-                XISOFTP.Disconnect();
+            if(Xisoftp.IsConnected)
+                Xisoftp.Disconnect();
 #endif
             e.Cancel = false;
         }
@@ -240,14 +294,18 @@
             var target = targetbox.Text;
             if(!resetTarget && !string.IsNullOrEmpty(target))
                 target = Path.Combine(target, Path.GetFileNameWithoutExtension(srcbox.Text));
-            if(string.IsNullOrEmpty(target))
+            if(string.IsNullOrEmpty(target) && !ftpbox.Checked)
                 target = string.Format("{0}\\{1}", Path.GetDirectoryName(srcbox.Text), Path.GetFileNameWithoutExtension(srcbox.Text));
+            else if(target.IndexOf(':') > 0 || string.IsNullOrEmpty(target))
+                target = Path.GetFileNameWithoutExtension(srcbox.Text);
             viewitem.SubItems.Add(target);
             var queueitem = new BwArgs {
                                            Source = srcbox.Text,
                                            Target = target,
                                            SkipSystemUpdate = skipsysbox.Checked,
                                            GenerateFileList = genfilelistbox.Checked,
+                                           UseFTP = ftpbox.Checked,
+                                           FtpSettings = FtpSettings,
                                            //GenerateSfv = gensfvbox.Checked,
                                            DeleteIsoOnCompletion = delIsobox.Checked
                                        };
@@ -317,6 +375,8 @@
                                                                                       ExcludeSysUpdate = args[i].SkipSystemUpdate,
                                                                                       GenerateFileList = args[i].GenerateFileList,
                                                                                       //GenerateSfv = args[i].GenerateSFV,
+                                                                                      UseFtp = args[i].UseFTP,
+                                                                                      FtpOpts = args[i].FtpSettings,
                                                                                       DeleteIsoOnCompletion = args[i].DeleteIsoOnCompletion
                                                                                   }, out list[i], out br);
                 if(br != null)
@@ -337,6 +397,8 @@
                                                                                ExcludeSysUpdate = args[i].SkipSystemUpdate,
                                                                                GenerateFileList = args[i].GenerateFileList,
                                                                                //GenerateSfv = args[i].GenerateSFV,
+                                                                               UseFtp = args[i].UseFTP,
+                                                                               FtpOpts = args[i].FtpSettings,
                                                                                DeleteIsoOnCompletion = args[i].DeleteIsoOnCompletion
                                                                            }, list[i]);
                 args[i].ErrorMsg = XisoExtractor.GetLastError();
@@ -412,27 +474,17 @@
         }
 
         private void clearToolStripMenuItem_Click(object sender, EventArgs e) { logbox.Text = ""; }
-
-        private void etatimer_Tick(object sender, EventArgs e)
-        {
-            if(isoprogressbar.Value == isoprogressbar.Maximum || isoprogressbar.Value == isoprogressbar.Minimum) {
-                etalabel.Text = "";
-                return;
-            }
-            _eta.Update(queueprogressbar.Value <= 0 ? (float)isoprogressbar.Value / isoprogressbar.Maximum : (float)queueprogressbar.Value / queueprogressbar.Maximum);
-            var ts = _eta.ETR;
-            etalabel.Text = ts.TotalSeconds < 1 ? "" : string.Format("TimeLeft: {0:F0} Minute(s) {1:D2} Second(s)", ts.TotalMinutes, ts.Seconds);
-        }
     }
 
     public sealed class BwArgs {
         internal bool DeleteIsoOnCompletion;
         internal string ErrorMsg;
+        internal Xisoftp.FTPSettingsData FtpSettings;
         internal bool GenerateFileList;
-        internal bool GenerateSfv;
         internal bool Result;
         internal bool SkipSystemUpdate;
         internal string Source;
         internal string Target;
+        internal bool UseFTP;
     }
 }

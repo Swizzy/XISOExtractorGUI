@@ -4,8 +4,8 @@
     using System.Reflection;
     using System.Windows.Forms;
 
-    static class Program
-    {
+    static class Program {
+        internal static MainForm Form;
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -15,7 +15,8 @@
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainAssemblyResolve;
-            Application.Run(new MainForm(args));
+            Form = new MainForm(args);
+            Application.Run(Form);
         }
 
         static Assembly CurrentDomainAssemblyResolve(object sender, ResolveEventArgs args) {
@@ -39,11 +40,20 @@
                 opt += "nosystemupdate=true ";
             if (args.GenerateFileList)
                 opt += "genfilelist=true ";
-            if (args.GenerateSfv)
-                opt += "gensfv=true ";
+            //if (args.GenerateSfv)
+            //    opt += "gensfv=true ";
             if(args.DeleteIsoOnCompletion)
                 opt += "deleteisooncompletion=true ";
-            return opt;
+            if(args.UseFTP) {
+                opt += "useftp=true";
+                opt += " ftphost=" + args.FtpSettings.Host;
+                opt += " ftpport=" + args.FtpSettings.Port;
+                opt += " ftpuser=" + args.FtpSettings.User;
+                opt += " ftppass=" + args.FtpSettings.Password;
+                opt += " ftppath=" + args.FtpSettings.Path;
+                opt += " ftpmode=" + args.FtpSettings.DataConnectionType;
+            }
+            return opt.Trim();
         }
     }
 }

@@ -36,6 +36,8 @@
 
         public TimeSpan ETR {
             get {
+                if(_queue.Count < 1)
+                    return TimeSpan.Zero;
                 var oldest = _queue.Peek();
                 var current = _current;
                 if(oldest.Value == current.Value)
