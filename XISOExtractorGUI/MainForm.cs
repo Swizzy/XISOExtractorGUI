@@ -21,6 +21,10 @@
                                                       Interval = 1000,
                                                       Enabled = true
                                                   };
+        private readonly Timer _timer2 = new Timer {
+                                                       Interval = 20,
+                                                       Enabled = true
+                                                   };
 
         private int _id;
         private long _processedData;
@@ -42,6 +46,10 @@
                                    _eta.Update((float)queueprogressbar.Value / queueprogressbar.Maximum);
                                UpdateTimeLeft();
                            };
+            _timer2.Tick += (sender, eventArgs) => {
+                                UpdateProgressText(ref isoprogressbar);
+                                UpdateProgressText(ref queueprogressbar);
+                            };
             ResetButtons();
 #if NOFTP
             ftpbox.Visible = false;
@@ -103,13 +111,17 @@
             else if(value < pbar.Minimum)
                 value = pbar.Minimum;
             pbar.Value = value;
+        }
+
+        private static void UpdateProgressText(ref ProgressBar pbar) {
             pbar.Refresh();
-            if(value == pbar.Minimum || value == pbar.Maximum)
+            if (pbar.Value == pbar.Minimum || pbar.Value == pbar.Maximum)
                 return;
-            using(var gr = pbar.CreateGraphics()) {
-                gr.DrawString(value + "%", SystemFonts.DefaultFont, Brushes.Black,
-                              new PointF(pbar.Width / 2 - (gr.MeasureString(value + "%", SystemFonts.DefaultFont).Width / 2.0F),
-                                         pbar.Height / 2 - (gr.MeasureString(value + "%", SystemFonts.DefaultFont).Height / 2.0F)));
+            using (var gr = pbar.CreateGraphics())
+            {
+                gr.DrawString(pbar.Value + "%", SystemFonts.DefaultFont, Brushes.Black,
+                              new PointF(pbar.Width / 2 - (gr.MeasureString(pbar.Value + "%", SystemFonts.DefaultFont).Width / 2.0F),
+                                         pbar.Height / 2 - (gr.MeasureString(pbar.Value + "%", SystemFonts.DefaultFont).Height / 2.0F)));
             }
         }
 

@@ -8,10 +8,14 @@
     using XISOExtractorGUI.Properties;
 
     public static class Xisoftp {
-        private const uint BufferSize = 0x2000;//0x5B4;
+        private const uint BufferSize = 0x2000;
         public static string LastError;
 
         private static readonly FtpClient Client = new FtpClient();
+
+        static Xisoftp() {
+            Client.SocketKeepAlive = true;
+        }
 
         public static bool IsConnected { get { return Client.IsConnected; } }
 
@@ -84,6 +88,7 @@
                 }
             }
             catch(Exception ex) {
+                LastError = ex.Message;
                 MessageBox.Show(string.Format(Resources.XISOFTPTransferError, file, ex), Resources.FTPTransferErrorTitle, MessageBoxButtons.OK, MessageBoxIcon.Error);
                 return false;
             }

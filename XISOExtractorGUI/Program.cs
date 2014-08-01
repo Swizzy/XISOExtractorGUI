@@ -1,6 +1,7 @@
 ﻿namespace XISOExtractorGUI
 {
     using System;
+    using System.IO;
     using System.Reflection;
     using System.Windows.Forms;
 
@@ -15,8 +16,13 @@
             Application.EnableVisualStyles();
             Application.SetCompatibleTextRenderingDefault(false);
             AppDomain.CurrentDomain.AssemblyResolve += CurrentDomainAssemblyResolve;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomainOnUnhandledException;
             Form = new MainForm(args);
             Application.Run(Form);
+        }
+
+        private static void CurrentDomainOnUnhandledException(object sender, UnhandledExceptionEventArgs unhandledExceptionEventArgs) {
+            File.WriteAllText(string.Format("crash{0}.log", DateTime.Now), unhandledExceptionEventArgs.ExceptionObject.ToString());
         }
 
         static Assembly CurrentDomainAssemblyResolve(object sender, ResolveEventArgs args) {

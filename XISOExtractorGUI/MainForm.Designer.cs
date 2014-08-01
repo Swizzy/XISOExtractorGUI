@@ -52,6 +52,7 @@
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripStatusLabel1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.fileprogressbar = new System.Windows.Forms.ToolStripProgressBar();
+            this.speedlbl = new System.Windows.Forms.ToolStripStatusLabel();
             this.operation = new System.Windows.Forms.ToolStripStatusLabel();
             this.label3 = new System.Windows.Forms.Label();
             this.isoprogressbar = new System.Windows.Forms.ProgressBar();
@@ -71,7 +72,6 @@
             this.logMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.clearToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.speedlbl = new System.Windows.Forms.ToolStripStatusLabel();
             this.groupBox1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.statusStrip2.SuspendLayout();
@@ -113,6 +113,8 @@
             // queview
             // 
             this.queview.AllowDrop = true;
+            this.queview.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.queview.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader4,
             this.columnHeader1,
@@ -319,6 +321,11 @@
             this.fileprogressbar.Name = "fileprogressbar";
             this.fileprogressbar.Size = new System.Drawing.Size(67, 20);
             // 
+            // speedlbl
+            // 
+            this.speedlbl.Name = "speedlbl";
+            this.speedlbl.Size = new System.Drawing.Size(0, 21);
+            // 
             // operation
             // 
             this.operation.Name = "operation";
@@ -337,6 +344,8 @@
             // 
             // isoprogressbar
             // 
+            this.isoprogressbar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.isoprogressbar.Location = new System.Drawing.Point(693, 208);
             this.isoprogressbar.Margin = new System.Windows.Forms.Padding(4);
             this.isoprogressbar.Name = "isoprogressbar";
@@ -355,6 +364,8 @@
             // 
             // queueprogressbar
             // 
+            this.queueprogressbar.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.queueprogressbar.Location = new System.Drawing.Point(693, 244);
             this.queueprogressbar.Margin = new System.Windows.Forms.Padding(4);
             this.queueprogressbar.Name = "queueprogressbar";
@@ -445,8 +456,10 @@
             // 
             // logbox
             // 
+            this.logbox.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            | System.Windows.Forms.AnchorStyles.Left) 
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.logbox.ContextMenuStrip = this.logMenu;
-            this.logbox.Dock = System.Windows.Forms.DockStyle.Fill;
             this.logbox.Location = new System.Drawing.Point(3, 18);
             this.logbox.Name = "logbox";
             this.logbox.ReadOnly = true;
@@ -476,11 +489,6 @@
             this.clearToolStripMenuItem.Text = "Clear";
             this.clearToolStripMenuItem.Click += new System.EventHandler(this.clearToolStripMenuItem_Click);
             // 
-            // speedlbl
-            // 
-            this.speedlbl.Name = "speedlbl";
-            this.speedlbl.Size = new System.Drawing.Size(0, 21);
-            // 
             // MainForm
             // 
             this.AllowDrop = true;
@@ -507,10 +515,8 @@
             this.Controls.Add(this.selsrcbtn);
             this.Controls.Add(this.addbtn);
             this.Controls.Add(this.abortbtn);
-            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.Margin = new System.Windows.Forms.Padding(4);
-            this.MaximizeBox = false;
-            this.MinimumSize = new System.Drawing.Size(1126, 373);
+            this.MinimumSize = new System.Drawing.Size(1126, 576);
             this.Name = "MainForm";
             this.Text = "XISO Extractor GUI v{0}.{1} (Build: {2}) By Swizzy";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainFormFormClosing);
