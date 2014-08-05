@@ -236,7 +236,6 @@
             // gensfvbox
             // 
             this.gensfvbox.AutoSize = true;
-            this.gensfvbox.Enabled = false;
             this.gensfvbox.Location = new System.Drawing.Point(8, 23);
             this.gensfvbox.Margin = new System.Windows.Forms.Padding(4);
             this.gensfvbox.Name = "gensfvbox";

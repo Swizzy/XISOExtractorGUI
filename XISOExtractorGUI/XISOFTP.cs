@@ -52,7 +52,7 @@
 
         public static void Disconnect() { Client.Disconnect(); }
 
-        public static bool SendFile(string file, ref BinaryReader src, long offset, long size) {
+        public static bool SendFile(string file, ref BinaryReader src, long offset, long size, XisoOptions xisoOpts, string path) {
             if(!Client.IsConnected) {
                 XisoExtractor.UpdateStatus("FTP Not connected!");
                 return false;
@@ -73,18 +73,23 @@
                     }
                     long processed = 0;
                     XISOStatus.UpdateFTPProgress(processed, size);
+                    uint crc = 0;
                     while(processed < size) {
                         if(XisoExtractor.Abort)
                             return false;
                         var sendsize = Utils.GetSmallest(size - processed, BufferSize);
                         var data = src.ReadBytes((int)sendsize);
                         stream.Write(data, 0, data.Length);
+                        if(xisoOpts.GenerateSfv)
+                            crc = SfvGenerator.Crc.ComputeChecksum(data, crc);
                         processed += sendsize;
                         var handler = ProgressUpdate;
                         if(handler != null)
                             handler.Invoke(null, new EventArg<long, long, long>(sendsize, processed, size));
                         XISOStatus.UpdateFTPProgress(processed, size);
                     }
+                    if (xisoOpts.GenerateSfv)
+                        xisoOpts.SfvGen.AddFile(Path.Combine(path, file), crc);
                 }
             }
             catch(Exception ex) {

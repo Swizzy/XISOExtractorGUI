@@ -46,11 +46,11 @@
                 opt += "nosystemupdate=true ";
             if (args.GenerateFileList)
                 opt += "genfilelist=true ";
-            //if (args.GenerateSfv)
-            //    opt += "gensfv=true ";
+            if (args.GenerateSfv)
+                opt += "gensfv=true ";
             if(args.DeleteIsoOnCompletion)
                 opt += "deleteisooncompletion=true ";
-            if(args.UseFTP) {
+            if(args.UseFtp) {
                 opt += "useftp=true";
                 opt += " ftphost=" + args.FtpSettings.Host;
                 opt += " ftpport=" + args.FtpSettings.Port;

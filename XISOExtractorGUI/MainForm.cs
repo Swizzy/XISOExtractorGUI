@@ -208,11 +208,12 @@
                                         SkipSystemUpdate = skipsysbox.Checked,
                                         GenerateFileList = genfilelistbox.Checked,
                                         DeleteIsoOnCompletion = delIsobox.Checked,
-                                        UseFTP = ftpbox.Checked,
-                                        FtpSettings = FtpSettings
+                                        UseFtp = ftpbox.Checked,
+                                        FtpSettings = FtpSettings,
+                                        GenerateSfv = gensfvbox.Checked
                                     };
 
-            if(bwargs.UseFTP && (bwargs.Target.IndexOf(':') > 0 || string.IsNullOrEmpty(bwargs.Target)))
+            if(bwargs.UseFtp && (bwargs.Target.IndexOf(':') > 0 || string.IsNullOrEmpty(bwargs.Target)))
                 bwargs.Target = Path.GetFileNameWithoutExtension(srcbox.Text);
             bw.RunWorkerAsync(bwargs);
         }
@@ -239,8 +240,8 @@
                                                                      Target = args.Target,
                                                                      ExcludeSysUpdate = args.SkipSystemUpdate,
                                                                      GenerateFileList = args.GenerateFileList,
-                                                                     //GenerateSfv = args.GenerateSFV,
-                                                                     UseFtp = args.UseFTP,
+                                                                     GenerateSfv = args.GenerateSfv,
+                                                                     UseFtp = args.UseFtp,
                                                                      FtpOpts = args.FtpSettings,
                                                                      DeleteIsoOnCompletion = args.DeleteIsoOnCompletion
                                                                  });
@@ -316,9 +317,9 @@
                                            Target = target,
                                            SkipSystemUpdate = skipsysbox.Checked,
                                            GenerateFileList = genfilelistbox.Checked,
-                                           UseFTP = ftpbox.Checked,
+                                           UseFtp = ftpbox.Checked,
                                            FtpSettings = FtpSettings,
-                                           //GenerateSfv = gensfvbox.Checked,
+                                           GenerateSfv = gensfvbox.Checked,
                                            DeleteIsoOnCompletion = delIsobox.Checked
                                        };
             var opt = Program.GetOptString(queueitem);
@@ -386,8 +387,8 @@
                                                                                       Target = args[i].Target,
                                                                                       ExcludeSysUpdate = args[i].SkipSystemUpdate,
                                                                                       GenerateFileList = args[i].GenerateFileList,
-                                                                                      //GenerateSfv = args[i].GenerateSFV,
-                                                                                      UseFtp = args[i].UseFTP,
+                                                                                      GenerateSfv = args[i].GenerateSfv,
+                                                                                      UseFtp = args[i].UseFtp,
                                                                                       FtpOpts = args[i].FtpSettings,
                                                                                       DeleteIsoOnCompletion = args[i].DeleteIsoOnCompletion
                                                                                   }, out list[i], out br);
@@ -408,8 +409,8 @@
                                                                                Target = args[i].Target,
                                                                                ExcludeSysUpdate = args[i].SkipSystemUpdate,
                                                                                GenerateFileList = args[i].GenerateFileList,
-                                                                               //GenerateSfv = args[i].GenerateSFV,
-                                                                               UseFtp = args[i].UseFTP,
+                                                                               GenerateSfv = args[i].GenerateSfv,
+                                                                               UseFtp = args[i].UseFtp,
                                                                                FtpOpts = args[i].FtpSettings,
                                                                                DeleteIsoOnCompletion = args[i].DeleteIsoOnCompletion
                                                                            }, list[i]);
@@ -497,6 +498,7 @@
         internal bool SkipSystemUpdate;
         internal string Source;
         internal string Target;
-        internal bool UseFTP;
+        internal bool UseFtp;
+        internal bool GenerateSfv;
     }
 }

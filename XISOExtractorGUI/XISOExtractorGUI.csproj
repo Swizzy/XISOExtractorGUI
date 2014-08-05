@@ -76,6 +76,7 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SfvGenerator.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="XISOFTP.cs" Condition="'$(Configuration)' != 'Release_NoFTP'" />
     <Compile Include="XISOExtractor.cs" />

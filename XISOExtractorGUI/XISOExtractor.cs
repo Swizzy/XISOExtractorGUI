@@ -62,6 +62,8 @@
 
         internal static bool GetFileListAndSize(XisoOptions opts, out XisoListAndSize retval, out BinaryReader br) {
             Abort = false;
+            if(opts.GenerateSfv)
+                opts.SfvGen = new SfvGenerator(Path.Combine(Path.GetDirectoryName(opts.Source), Path.GetFileNameWithoutExtension(opts.Source)) + ".sfv");
             retval = new XisoListAndSize();
             br = null;
             _errorlevel = 1;
@@ -160,11 +162,13 @@
         internal static bool ExtractXiso(XisoOptions opts, XisoListAndSize retval) {
             var br = new BinaryReader(File.Open(opts.Source, FileMode.Open, FileAccess.Read, FileShare.Read));
             try {
+                if (opts.GenerateSfv)
+                    opts.SfvGen = new SfvGenerator(Path.Combine(Path.GetDirectoryName(opts.Source), Path.GetFileNameWithoutExtension(opts.Source)) + ".sfv");
                 var ret = ExtractXiso(opts, retval, ref br);
-                if(ret && opts.DeleteIsoOnCompletion) {
-                    br.Close();
-                    File.Delete(opts.Source);
-                }
+                if(!ret || !opts.DeleteIsoOnCompletion)
+                    return ret;
+                br.Close();
+                File.Delete(opts.Source);
                 return ret;
             }
             finally {
@@ -178,10 +182,16 @@
                 return ExtractFiles(ref br, ref retval.List, opts.FtpOpts, opts);
             if(opts.UseFtp)
                 opts.Target = Path.Combine(Path.GetDirectoryName(opts.Source), Path.GetFileNameWithoutExtension(opts.Source));
+            if (opts.GenerateSfv)
+                opts.SfvGen = new SfvGenerator(Path.Combine(Path.GetDirectoryName(opts.Source), Path.GetFileNameWithoutExtension(opts.Source)) + ".sfv");
             var space = GetTotalFreeSpace(opts.Target);
             if(space > retval.Size) {
                 _totalSize = retval.Size;
-                return ExtractFiles(ref br, ref retval.List, opts.Target);
+                if(!ExtractFiles(ref br, ref retval.List, opts.Target, opts))
+                    return false;
+                if(opts.GenerateSfv)
+                    opts.SfvGen.Save();
+                return true;
             }
             _errorlevel = 5;
             UpdateStatus(string.Format("Extraction failed! (Not enough space on drive) space needed: {0} Space available: {1}", Utils.GetSizeReadable(retval.Size), space));
@@ -228,16 +238,16 @@
                     return false;
                 }
                 UpdateStatus(string.Format("Extracting {0}{1} ({2})", entry.Path, entry.Name, Utils.GetSizeReadable(entry.Size)));
-                if(!Xisoftp.SendFile(entry.Name, ref br, entry.Offset, entry.Size)) {
+                if(!Xisoftp.SendFile(entry.Name, ref br, entry.Offset, entry.Size, xisoOpts, entry.Path)) {
                     UpdateStatus(string.Format("Send File Failure! Last Error: {0}", Xisoftp.LastError));
                     Xisoftp.Disconnect();
                     return false;
                 }
             }
+            if(xisoOpts.GenerateSfv)
+                xisoOpts.SfvGen.Save();
             return true;
         }
-
-        private static uint GetSmallest(uint val1, uint val2) { return val1 < val2 ? val1 : val2; }
 
         private static long GetTotalFreeSpace(string path) {
             foreach(var drive in DriveInfo.GetDrives()) {
@@ -415,7 +425,7 @@
                 Parse(ref br, ref list, right * 4, level, tocoffset, dirprefix);
         }
 
-        private static bool ExtractFiles(ref BinaryReader br, ref List<XisoTableData> list, string target) {
+        private static bool ExtractFiles(ref BinaryReader br, ref List<XisoTableData> list, string target, XisoOptions xisoOpts) {
             _totalProcessed = 0;
             UpdateOperation(string.Format("Extracting files to {0}", target));
             if(list.Count == 0)
@@ -430,13 +440,15 @@
                     continue;
                 }
                 UpdateStatus(string.Format("Extracting {0}{1} ({2})", entry.Path, entry.Name, Utils.GetSizeReadable(entry.Size)));
-                if(!ExtractFile(ref br, entry.Offset, entry.Size, string.Format("{0}{1}{2}", target, entry.Path, entry.Name)))
+                if(!ExtractFile(ref br, entry.Offset, entry.Size, string.Format("{0}{1}{2}", target, entry.Path, entry.Name), xisoOpts))
                     return false;
             }
+            if(xisoOpts.GenerateSfv)
+                xisoOpts.SfvGen.Save();
             return true;
         }
 
-        private static bool ExtractFile(ref BinaryReader br, long offset, uint size, string target) {
+        private static bool ExtractFile(ref BinaryReader br, long offset, uint size, string target, XisoOptions xisoOpts) {
             _errorlevel = 4;
             if(!BinarySeek(ref br, offset, size)) {
                 UpdateStatus("Seek failure");
@@ -445,11 +457,18 @@
             using(var bw = new BinaryWriter(File.Open(target, FileMode.Create, FileAccess.Write, FileShare.None))) {
                 _errorlevel = 0;
                 UpdateFileProgress(0, 0);
+                uint crc = 0;
                 for(uint i = 0; i < size;) {
                     if(Abort)
                         return false;
-                    var readsize = GetSmallest(size - i, ReadWriteBuffer);
-                    bw.Write(br.ReadBytes((int)readsize));
+                    var readsize = Utils.GetSmallest(size - i, ReadWriteBuffer);
+                    if(!xisoOpts.GenerateSfv)
+                        bw.Write(br.ReadBytes((int)readsize));
+                    else {
+                        var buf = br.ReadBytes((int)readsize);
+                        bw.Write(buf);
+                        crc = SfvGenerator.Crc.ComputeChecksum(buf, crc);
+                    }
                     _totalProcessed += readsize;
                     i += readsize;
                     UpdateFileProgress(((double)i / size) * 100, readsize);
@@ -459,6 +478,8 @@
                     _multiProcessed += readsize;
                     UpdateTotalProgress(((double)_multiProcessed / MultiSize) * 100);
                 }
+                if(xisoOpts.GenerateSfv)
+                    xisoOpts.SfvGen.AddFile(target.Replace(xisoOpts.Target, ""), crc);
             }
             return true;
         }
@@ -479,12 +500,13 @@
         public uint Size;
     }
 
-    internal sealed class XisoOptions {
+    public sealed class XisoOptions {
         public bool DeleteIsoOnCompletion;
         public bool ExcludeSysUpdate = true;
         public Xisoftp.FTPSettingsData FtpOpts;
         public bool GenerateFileList;
-        //public bool GenerateSfv;
+        public bool GenerateSfv;
+        public SfvGenerator SfvGen;
         public string Source;
         public string Target;
         public bool UseFtp;
