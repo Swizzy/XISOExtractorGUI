@@ -169,7 +169,7 @@
                     return ret;
                 br.Close();
                 File.Delete(opts.Source);
-                return ret;
+                return true;
             }
             finally {
                 br.Close();

@@ -12,24 +12,17 @@
     using XISOExtractorGUI.Properties;
     using Timer = System.Windows.Forms.Timer;
 
-    internal sealed partial class MainForm: Form {
+    public sealed partial class MainForm: Form {
         internal readonly Xisoftp.FTPSettingsData FtpSettings = new Xisoftp.FTPSettingsData();
         private readonly EtaCalculator _eta = new EtaCalculator();
         private readonly Dictionary<int, BwArgs> _queDict = new Dictionary<int, BwArgs>();
-
-        private readonly Timer _timer = new Timer {
-                                                      Interval = 1000,
-                                                      Enabled = true
-                                                  };
-        private readonly Timer _timer2 = new Timer {
-                                                       Interval = 20,
-                                                       Enabled = true
-                                                   };
-
+        private readonly SettingsManager _settingsManager;
         private int _id;
         private long _processedData;
+        private Stopwatch _sw;
 
         internal MainForm(IList<string> args) {
+            _settingsManager = new SettingsManager(this);
             InitializeComponent();
             var ver = Assembly.GetExecutingAssembly().GetName().Version;
             Text = string.Format(Text, ver.Major, ver.Minor, ver.Build);
@@ -38,7 +31,12 @@
             XisoExtractor.Operation += XisoExtractorOnOperation;
             XisoExtractor.Status += XisoExtractorOnStatus;
             XisoExtractor.TotalProgress += XisoExtractorQueueProgress;
-            _timer.Tick += (sender, eventArgs) => {
+            var speedtimer = new Timer
+            {
+                Interval = 1000,
+                Enabled = true
+            };
+            speedtimer.Tick += (sender, eventArgs) => {
                                speedlbl.Text = GetSpeed();
                                if(queueprogressbar.Value == queueprogressbar.Minimum)
                                    _eta.Update((float)isoprogressbar.Value / isoprogressbar.Maximum);
@@ -46,11 +44,19 @@
                                    _eta.Update((float)queueprogressbar.Value / queueprogressbar.Maximum);
                                UpdateTimeLeft();
                            };
-            _timer2.Tick += (sender, eventArgs) => {
+            var percenttimer = new Timer
+            {
+                Interval = 20,
+                Enabled = true
+            };
+            percenttimer.Tick += (sender, eventArgs) => {
                                 UpdateProgressText(ref isoprogressbar);
                                 UpdateProgressText(ref queueprogressbar);
                             };
             ResetButtons();
+            var settings = Path.Combine(Path.GetDirectoryName(Assembly.GetAssembly(typeof(Program)).Location), "default.cfg");
+            if(File.Exists(settings))
+                _settingsManager.LoadSettings(settings);
 #if NOFTP
             ftpbox.Visible = false;
 #endif
@@ -115,10 +121,9 @@
 
         private static void UpdateProgressText(ref ProgressBar pbar) {
             pbar.Refresh();
-            if (pbar.Value == pbar.Minimum || pbar.Value == pbar.Maximum)
+            if(pbar.Value == pbar.Minimum || pbar.Value == pbar.Maximum)
                 return;
-            using (var gr = pbar.CreateGraphics())
-            {
+            using(var gr = pbar.CreateGraphics()) {
                 gr.DrawString(pbar.Value + "%", SystemFonts.DefaultFont, Brushes.Black,
                               new PointF(pbar.Width / 2 - (gr.MeasureString(pbar.Value + "%", SystemFonts.DefaultFont).Width / 2.0F),
                                          pbar.Height / 2 - (gr.MeasureString(pbar.Value + "%", SystemFonts.DefaultFont).Height / 2.0F)));
@@ -134,7 +139,6 @@
                 pbar.Value = pbar.Minimum;
             else
                 pbar.Value = value;
-
         }
 
         private void XisoExtractorTotalProgress(object sender, EventArg<double> e) {
@@ -281,6 +285,7 @@
 
         private void SrcboxTextChanged(object sender, EventArgs e) {
             extractbtn.Enabled = (!string.IsNullOrEmpty(srcbox.Text) && File.Exists(srcbox.Text));
+            gensfvbtn.Enabled = extractbtn.Enabled;
             addbtn.Enabled = extractbtn.Enabled;
         }
 
@@ -362,10 +367,6 @@
                     _queDict.Remove(id);
                 queview.Items.Remove(entry);
             }
-        }
-
-        private void EditQueueItem(object sender, EventArgs e) {
-            //TODO: Make edit function
         }
 
         private void MultiExtractDoWork(object sender, DoWorkEventArgs e) {
@@ -487,6 +488,77 @@
         }
 
         private void clearToolStripMenuItem_Click(object sender, EventArgs e) { logbox.Text = ""; }
+
+        private void gensfvbtn_Click(object sender, EventArgs e) {
+            if(string.IsNullOrEmpty(srcbox.Text)) {
+                MessageBox.Show("Select source first!");
+                return;
+            }
+            var sfd = new SaveFileDialog {
+                                             FileName = "checksums.sfv",
+                                             DefaultExt = "sfv",
+                                             AddExtension = true
+                                         };
+            if(sfd.ShowDialog() != DialogResult.OK)
+                return;
+            _sw = Stopwatch.StartNew();
+            bw.RunWorkerCompleted += SfvOnCompleted;
+            bw.DoWork += SfvOnDoWork;
+            bw.RunWorkerAsync(new XisoOptions {
+                                                  Source = srcbox.Text,
+                                                  Target = sfd.FileName,
+                                                  ExcludeSysUpdate = skipsysbox.Checked
+                                              });
+        }
+
+        private void SfvOnCompleted(object sender, RunWorkerCompletedEventArgs runWorkerCompletedEventArgs) {
+            bw.DoWork -= SfvOnDoWork;
+            bw.RunWorkerCompleted -= SfvOnCompleted;
+            XisoExtractor.Abort = false;
+            XisoExtractorOnStatus(null, new EventArg<string>(string.Format("SFV Generation completed after {0} Minute(s) {1} Second(s)", _sw.Elapsed.Minutes, _sw.Elapsed.Seconds)));
+            XisoExtractorOnOperation(null, new EventArg<string>("SFV Generation completed"));
+        }
+
+        private void SfvOnDoWork(object sender, DoWorkEventArgs doWorkEventArgs) {
+            var opts = doWorkEventArgs.Argument as XisoOptions;
+            if(opts == null)
+                return;
+            var sfvgen = new SfvGenerator(opts.Target);
+            BinaryReader br = null;
+            try {
+                XisoListAndSize xisoEntries;
+                if(!XisoExtractor.GetFileListAndSize(opts, out xisoEntries, out br))
+                    return;
+                long totalDone = 0;
+                XisoExtractorOnOperation(null, new EventArg<string>("Generating SFV CRC32 values..."));
+                foreach(var entry in xisoEntries.List) {
+                    if(!entry.IsFile)
+                        continue;
+                    XisoExtractorOnStatus(null, new EventArg<string>(string.Format("Calculating CRC32 for: {0}{1} ({2})", entry.Path, entry.Name, Utils.GetSizeReadable(entry.Size))));
+                    br.BaseStream.Seek(entry.Offset, SeekOrigin.Begin);
+                    var left = entry.Size;
+                    uint crc = 0;
+                    while(left > 0) {
+                        if(XisoExtractor.Abort)
+                            return;
+                        var size = Utils.GetSmallest(0x4000, left);
+                        crc = SfvGenerator.Crc.ComputeChecksum(br.ReadBytes((int)size), crc);
+                        left -= size;
+                        totalDone += size;
+                        XisoExtractorFileProgress(null, new EventArg<double, long>(Utils.GetPercentage(entry.Size - left, entry.Size), size));
+                        XisoExtractorTotalProgress(null, new EventArg<double>(Utils.GetPercentage(totalDone, xisoEntries.Size)));
+                    }
+                    sfvgen.AddFile(Path.Combine(entry.Path, entry.Name), crc);
+                }
+                sfvgen.Save();
+            }
+            finally {
+                if(br != null)
+                    br.Close();
+            }
+        }
+
+        private void settingsbtn_Click(object sender, EventArgs e) { _settingsManager.ShowDialog(); }
     }
 
     public sealed class BwArgs {
@@ -494,11 +566,11 @@
         internal string ErrorMsg;
         internal Xisoftp.FTPSettingsData FtpSettings;
         internal bool GenerateFileList;
+        internal bool GenerateSfv;
         internal bool Result;
         internal bool SkipSystemUpdate;
         internal string Source;
         internal string Target;
         internal bool UseFtp;
-        internal bool GenerateSfv;
     }
 }

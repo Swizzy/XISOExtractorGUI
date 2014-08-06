@@ -44,12 +44,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
+    <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Net.FtpClient">
       <HintPath>.\System.Net.FtpClient.dll</HintPath>
       <Private>False</Private>
     </Reference>
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EndianConverter.cs" />
@@ -76,6 +78,12 @@
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SettingsManager.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="SettingsManager.Designer.cs">
+      <DependentUpon>SettingsManager.cs</DependentUpon>
+    </Compile>
     <Compile Include="SfvGenerator.cs" />
     <Compile Include="Utils.cs" />
     <Compile Include="XISOFTP.cs" Condition="'$(Configuration)' != 'Release_NoFTP'" />
@@ -102,6 +110,9 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="SettingsManager.resx">
+      <DependentUpon>SettingsManager.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="System.Net.FtpClient.dll" Condition="'$(Configuration)' != 'Release_NoFTP'" />
   </ItemGroup>
   <ItemGroup>
@@ -111,7 +122,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
     <VisualStudio>
-      <UserProperties BuildVersion_UpdateFileVersion="True" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_BuildVersioningStyle="None.None.Increment.None" />
+      <UserProperties BuildVersion_BuildVersioningStyle="None.None.Increment.None" BuildVersion_UpdateAssemblyVersion="True" BuildVersion_UpdateFileVersion="True" />
     </VisualStudio>
   </ProjectExtensions>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

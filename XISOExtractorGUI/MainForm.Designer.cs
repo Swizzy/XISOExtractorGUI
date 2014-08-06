@@ -1,6 +1,6 @@
 ﻿namespace XISOExtractorGUI
 {
-    internal sealed partial class MainForm
+    public sealed partial class MainForm
     {
         /// <summary>
         /// Required designer variable.
@@ -41,6 +41,7 @@
             this.label2 = new System.Windows.Forms.Label();
             this.targetbox = new System.Windows.Forms.TextBox();
             this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.settingsbtn = new System.Windows.Forms.Button();
             this.ftpbox = new System.Windows.Forms.CheckBox();
             this.genfilelistbox = new System.Windows.Forms.CheckBox();
             this.delIsobox = new System.Windows.Forms.CheckBox();
@@ -65,13 +66,13 @@
             this.status = new System.Windows.Forms.ToolStripStatusLabel();
             this.queueMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.removeToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
-            this.editToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.abortbtn = new System.Windows.Forms.Button();
             this.groupBox2 = new System.Windows.Forms.GroupBox();
             this.logbox = new System.Windows.Forms.RichTextBox();
             this.logMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.saveToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.clearToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.gensfvbtn = new System.Windows.Forms.Button();
             this.groupBox1.SuspendLayout();
             this.statusStrip1.SuspendLayout();
             this.statusStrip2.SuspendLayout();
@@ -186,6 +187,7 @@
             // 
             // groupBox1
             // 
+            this.groupBox1.Controls.Add(this.settingsbtn);
             this.groupBox1.Controls.Add(this.ftpbox);
             this.groupBox1.Controls.Add(this.genfilelistbox);
             this.groupBox1.Controls.Add(this.delIsobox);
@@ -199,6 +201,16 @@
             this.groupBox1.TabIndex = 4;
             this.groupBox1.TabStop = false;
             this.groupBox1.Text = "Options";
+            // 
+            // settingsbtn
+            // 
+            this.settingsbtn.Location = new System.Drawing.Point(394, 45);
+            this.settingsbtn.Name = "settingsbtn";
+            this.settingsbtn.Size = new System.Drawing.Size(147, 28);
+            this.settingsbtn.TabIndex = 12;
+            this.settingsbtn.Text = "Settings Manager";
+            this.settingsbtn.UseVisualStyleBackColor = true;
+            this.settingsbtn.Click += new System.EventHandler(this.settingsbtn_Click);
             // 
             // ftpbox
             // 
@@ -287,7 +299,7 @@
             this.extractbtn.Location = new System.Drawing.Point(16, 244);
             this.extractbtn.Margin = new System.Windows.Forms.Padding(4);
             this.extractbtn.Name = "extractbtn";
-            this.extractbtn.Size = new System.Drawing.Size(547, 28);
+            this.extractbtn.Size = new System.Drawing.Size(269, 28);
             this.extractbtn.TabIndex = 5;
             this.extractbtn.Text = "Just Extract";
             this.extractbtn.UseVisualStyleBackColor = true;
@@ -407,11 +419,10 @@
             // 
             this.queueMenu.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(224)))), ((int)(((byte)(224)))), ((int)(((byte)(224)))));
             this.queueMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.removeToolStripMenuItem,
-            this.editToolStripMenuItem});
+            this.removeToolStripMenuItem});
             this.queueMenu.Name = "queueMenu";
             this.queueMenu.ShowImageMargin = false;
-            this.queueMenu.Size = new System.Drawing.Size(108, 52);
+            this.queueMenu.Size = new System.Drawing.Size(151, 56);
             // 
             // removeToolStripMenuItem
             // 
@@ -419,13 +430,6 @@
             this.removeToolStripMenuItem.Size = new System.Drawing.Size(107, 24);
             this.removeToolStripMenuItem.Text = "Remove";
             this.removeToolStripMenuItem.Click += new System.EventHandler(this.RemoveQueueItem);
-            // 
-            // editToolStripMenuItem
-            // 
-            this.editToolStripMenuItem.Name = "editToolStripMenuItem";
-            this.editToolStripMenuItem.Size = new System.Drawing.Size(107, 24);
-            this.editToolStripMenuItem.Text = "Edit";
-            this.editToolStripMenuItem.Click += new System.EventHandler(this.EditQueueItem);
             // 
             // abortbtn
             // 
@@ -488,6 +492,18 @@
             this.clearToolStripMenuItem.Text = "Clear";
             this.clearToolStripMenuItem.Click += new System.EventHandler(this.clearToolStripMenuItem_Click);
             // 
+            // gensfvbtn
+            // 
+            this.gensfvbtn.Enabled = false;
+            this.gensfvbtn.Location = new System.Drawing.Point(294, 244);
+            this.gensfvbtn.Margin = new System.Windows.Forms.Padding(4);
+            this.gensfvbtn.Name = "gensfvbtn";
+            this.gensfvbtn.Size = new System.Drawing.Size(269, 28);
+            this.gensfvbtn.TabIndex = 5;
+            this.gensfvbtn.Text = "Just Generate SFV";
+            this.gensfvbtn.UseVisualStyleBackColor = true;
+            this.gensfvbtn.Click += new System.EventHandler(this.gensfvbtn_Click);
+            // 
             // MainForm
             // 
             this.AllowDrop = true;
@@ -502,6 +518,7 @@
             this.Controls.Add(this.isoprogressbar);
             this.Controls.Add(this.label3);
             this.Controls.Add(this.statusStrip1);
+            this.Controls.Add(this.gensfvbtn);
             this.Controls.Add(this.extractbtn);
             this.Controls.Add(this.processbtn);
             this.Controls.Add(this.groupBox1);
@@ -548,9 +565,6 @@
         private System.Windows.Forms.Label label2;
         private System.Windows.Forms.TextBox targetbox;
         private System.Windows.Forms.GroupBox groupBox1;
-        private System.Windows.Forms.CheckBox genfilelistbox;
-        private System.Windows.Forms.CheckBox gensfvbox;
-        private System.Windows.Forms.CheckBox skipsysbox;
         private System.Windows.Forms.ColumnHeader columnHeader4;
         private System.Windows.Forms.Button addbtn;
         private System.Windows.Forms.Button processbtn;
@@ -569,10 +583,7 @@
         private System.Windows.Forms.ToolStripStatusLabel status;
         private System.Windows.Forms.ContextMenuStrip queueMenu;
         private System.Windows.Forms.ToolStripMenuItem removeToolStripMenuItem;
-        private System.Windows.Forms.ToolStripMenuItem editToolStripMenuItem;
         private System.Windows.Forms.Button abortbtn;
-        private System.Windows.Forms.CheckBox ftpbox;
-        private System.Windows.Forms.CheckBox delIsobox;
         private System.Windows.Forms.GroupBox groupBox2;
         private System.Windows.Forms.RichTextBox logbox;
         private System.Windows.Forms.ContextMenuStrip logMenu;
@@ -580,5 +591,12 @@
         private System.Windows.Forms.ToolStripMenuItem clearToolStripMenuItem;
         private System.Windows.Forms.ToolStripStatusLabel etalabel;
         private System.Windows.Forms.ToolStripStatusLabel speedlbl;
+        private System.Windows.Forms.Button gensfvbtn;
+        private System.Windows.Forms.Button settingsbtn;
+        internal System.Windows.Forms.CheckBox genfilelistbox;
+        internal System.Windows.Forms.CheckBox gensfvbox;
+        internal System.Windows.Forms.CheckBox skipsysbox;
+        internal System.Windows.Forms.CheckBox ftpbox;
+        internal System.Windows.Forms.CheckBox delIsobox;
     }
 }
