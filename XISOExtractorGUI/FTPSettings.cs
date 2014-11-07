@@ -29,6 +29,7 @@ namespace XISOExtractorGUI
 
         public FTPSettings() {
             InitializeComponent();
+            Icon = Program.Icon;
             if (Imglist.Images.Empty) {
                 Imglist.Images.Add("folder", Resources.folder);
                 Imglist.Images.Add("file", Resources.file);

@@ -24,6 +24,7 @@
         internal MainForm(IList<string> args) {
             _settingsManager = new SettingsManager(this);
             InitializeComponent();
+            Icon = Program.Icon;
             var ver = Assembly.GetExecutingAssembly().GetName().Version;
             Text = string.Format(Text, ver.Major, ver.Minor, ver.Build);
             XisoExtractor.FileProgress += XisoExtractorFileProgress;

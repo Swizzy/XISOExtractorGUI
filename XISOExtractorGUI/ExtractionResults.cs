@@ -8,6 +8,7 @@ namespace XISOExtractorGUI
         internal ExtractionResults()
         {
             InitializeComponent();
+            Icon = Program.Icon;
         }
 
         internal void Show(IEnumerable<BwArgs> results)

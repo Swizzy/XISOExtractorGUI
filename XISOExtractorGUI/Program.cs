@@ -1,12 +1,14 @@
 ﻿namespace XISOExtractorGUI
 {
     using System;
+    using System.Drawing;
     using System.IO;
     using System.Reflection;
     using System.Windows.Forms;
 
     static class Program {
         internal static MainForm Form;
+        internal static Icon Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath);
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
