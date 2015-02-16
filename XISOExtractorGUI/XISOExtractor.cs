@@ -128,6 +128,7 @@
                 var sw = new Stopwatch();
                 sw.Start();
                 XisoListAndSize retval;
+                UpdateStatus(string.Format("Extracting {0}", opts.Source));
                 if(!GetFileListAndSize(opts, out retval, out br))
                     return false;
                 _errorlevel = 0;
@@ -185,6 +186,10 @@
             if (opts.GenerateSfv)
                 opts.SfvGen = new SfvGenerator(Path.Combine(Path.GetDirectoryName(opts.Source), Path.GetFileNameWithoutExtension(opts.Source)) + ".sfv");
             var space = GetTotalFreeSpace(opts.Target);
+            if(space < 0) {
+                UpdateStatus(string.Format("WARNING: Unable to get Total Free Space got: {0} We'll be extracting anyways...", space));
+                space = retval.Size * 100; // There was an error, try to extract anyways
+            }
             if(space > retval.Size) {
                 _totalSize = retval.Size;
                 if(!ExtractFiles(ref br, ref retval.List, opts.Target, opts))
@@ -194,7 +199,7 @@
                 return true;
             }
             _errorlevel = 5;
-            UpdateStatus(string.Format("Extraction failed! (Not enough space on drive) space needed: {0} Space available: {1}", Utils.GetSizeReadable(retval.Size), space));
+            UpdateStatus(string.Format("Extraction failed! (Not enough space on drive) space needed: {0} Space available: {1}", Utils.GetSizeReadable(retval.Size), Utils.GetSizeReadable(space)));
             return false;
         }
 
@@ -219,6 +224,7 @@
                 return false;
             }
             ftpOpts.Path += xisoOpts.Target;
+            UpdateStatus(string.Format("Extracting files to ftp:{0}", ftpOpts.Path));
             UpdateOperation(string.Format("Extracting files to ftp:{0}", ftpOpts.Path));
             foreach(var entry in list) {
                 if(entry.IsFile)
@@ -257,7 +263,7 @@
             return -1;
         }
 
-        private static void UpdateOperation(string operation) {
+        internal static void UpdateOperation(string operation) {
             var handler = Operation;
             if(handler != null)
                 handler(null, new EventArg<string>(operation));
@@ -427,6 +433,7 @@
 
         private static bool ExtractFiles(ref BinaryReader br, ref List<XisoTableData> list, string target, XisoOptions xisoOpts) {
             _totalProcessed = 0;
+            UpdateStatus(string.Format("Extracting files to {0}", target));
             UpdateOperation(string.Format("Extracting files to {0}", target));
             if(list.Count == 0)
                 return false;

@@ -384,6 +384,7 @@
                 if(XisoExtractor.Abort)
                     return;
                 BinaryReader br;
+                XisoExtractor.UpdateStatus(string.Format("Getting information about {0}", args[i].Source));
                 args[i].Result = XisoExtractor.GetFileListAndSize(new XisoOptions {
                                                                                       Source = args[i].Source,
                                                                                       Target = args[i].Target,
@@ -528,14 +529,15 @@
             BinaryReader br = null;
             try {
                 XisoListAndSize xisoEntries;
+                XisoExtractor.UpdateStatus(string.Format("Generating SFV for {0}", opts.Source));
                 if(!XisoExtractor.GetFileListAndSize(opts, out xisoEntries, out br))
                     return;
                 long totalDone = 0;
-                XisoExtractorOnOperation(null, new EventArg<string>("Generating SFV CRC32 values..."));
+                XisoExtractor.UpdateOperation("Generating SFV CRC32 values...");
                 foreach(var entry in xisoEntries.List) {
                     if(!entry.IsFile)
                         continue;
-                    XisoExtractorOnStatus(null, new EventArg<string>(string.Format("Calculating CRC32 for: {0}{1} ({2})", entry.Path, entry.Name, Utils.GetSizeReadable(entry.Size))));
+                    XisoExtractor.UpdateStatus(string.Format("Calculating CRC32 for: {0}{1} ({2})", entry.Path, entry.Name, Utils.GetSizeReadable(entry.Size)));
                     br.BaseStream.Seek(entry.Offset, SeekOrigin.Begin);
                     var left = entry.Size;
                     uint crc = 0;
